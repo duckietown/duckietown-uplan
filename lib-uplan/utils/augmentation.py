@@ -73,76 +73,85 @@ def vanilla_augment_graph(graph, dist=0.1):
 
     return aug_graph
 
-#
-# def augment_graph(graph, num_right=3, num_left=1, dist=0.1):
-#
-#     aug_graph = copy.deepcopy(graph)
-#
-#     # Add an augmented state for the graph
-#     for n in aug_graph.nodes():
-#         aug_graph .nodes[n]['visited'] = False
-#
-#     first_node = list(graph.nodes())[0]
-#     to_visit_stack = [first_node, ]
-#
-#     list_right_points = []
-#     list_right_names = []
-#     list_left_points = []
-#     list_left_names = []
-#
-#     while True:
-#         if not to_visit_stack:
-#             break
-#
-#         current_node = to_visit_stack.pop()
-#
-#         # Add not visited successors
-#         for suc in nx.DiGraph.successors(graph, current_node):
-#             if not aug_graph.node[suc]['visited']:
-#                 to_visit_stack.append(suc)
-#
-#         if not aug_graph.node[current_node]['visited']:
-#
-#             current_point = aug_graph.node[current_node]['point']
-#             for d in range(num_left):
-#                 current_node_name = current_node + "_l" + str(d)
-#                 list_left_points.append(add_point_horizontally(current_point, -d*dist))
-#                 list_left_names.append(current_node_name)
-#                 aug_graph.add_node(current_node_name)
-#                 aug_graph.node[current_node_name]['point'] = list_left_points[-1]
-#
-#             for d in range(num_right):
-#                 current_node_name = current_node + "_r" + str(d)
-#                 list_right_points.append(add_point_horizontally(current_point, d*dist))
-#                 list_right_names.append(current_node_name)
-#                 aug_graph.add_node(current_node_name)
-#                 aug_graph.node[current_node_name]['point'] = list_right_points[-1]
-#
-#             predecessors = list(nx.DiGraph.predecessors(aug_graph, current_node))
-#
-#             for predec in predecessors:
-#                 if not aug_graph.node[predec]['visited']:
-#                     if num_left != 0:
-#                         aug_graph.add_edge(predec, current_node + "_l0")
-#                     if num_right != 0:
-#                         aug_graph.add_edge(predec, current_node + "_r0")
-#                 else:
-#                     if num_left != 0:
-#                         aug_graph.add_edge(predec, current_node + "_l0")
-#                     if num_right != 0:
-#                         aug_graph.add_edge(predec, current_node + "_r0")
-#                     for i in range(num_left):
-#                         aug_graph.add_edge(predec + "_l" + str(i), current_node + "_l" + str(i))
-#                     for i in range(num_right):
-#                         aug_graph.add_edge(predec + "_r" + str(i), current_node + "_r" + str(i))
-#
-#                     #aug_graph.add_edge(predec + "_r", current_node_r)
-#                     #aug_graph.add_edge(predec + "_l", current_node)
-#                     #aug_graph.add_edge(predec + "_r", current_node)
-#
-#             aug_graph.node[current_node]['visited'] = True
-#
-#     return aug_graph
+
+def augment_graph(graph, num_right=1, num_left=1, dist=0.1):
+    # Add a zero to the name of the original nodes
+    mapping = {i: i+"_"+str(0) for i in graph.nodes()}
+    graph = nx.relabel_nodes(graph, mapping)
+
+    aug_graph = copy.deepcopy(graph)
+
+
+    # Add an augmented state for the graph
+    for n in aug_graph.nodes():
+        aug_graph.nodes[n]['visited'] = False
+
+    first_node = list(graph.nodes())[0]
+    to_visit_stack = [first_node, ]
+
+    list_nodes_id = list(range(-num_left, num_right+1))
+
+    while True:
+        if not to_visit_stack:
+            break
+
+        current_node = to_visit_stack.pop()
+        current_node_stem = current_node[:-2]
+
+        # Add not visited successors
+        for suc in nx.DiGraph.successors(graph, current_node):
+            if not aug_graph.node[suc]['visited']:
+                to_visit_stack.append(suc)
+
+        if not aug_graph.node[current_node]['visited']:
+            current_point = aug_graph.node[current_node]['point']
+
+            for id in list_nodes_id:
+                if id != 0:    # Not the center node
+                    current_node_name = current_node_stem + "_" + str(id)
+                    aug_graph.add_node(current_node_name)
+                    aug_graph.node[current_node_name]['point'] = add_point_horizontally(current_point, id*dist)
+
+            for pre in nx.DiGraph.predecessors(graph, current_node):
+                pre_stem = pre[:-2]
+                if -1 in list_nodes_id:
+                    aug_graph.add_edge(pre, current_node_stem + "_-1")
+                if 1 in list_nodes_id:
+                    aug_graph.add_edge(pre, current_node_stem + "_1")
+
+                if aug_graph.node[pre]['visited']:
+
+                    # Connect with straight edges
+                    for id in list_nodes_id:
+                        aug_graph.add_edge(pre_stem + "_" + str(id), current_node_stem + "_" + str(id))
+
+                    # Connect diagonally to the right
+                    for id in list_nodes_id[1:]:
+                        aug_graph.add_edge(pre_stem + "_" + str(id-1), current_node_stem + "_" + str(id))
+
+                    # Connect diagonally to the left
+                    for id in list_nodes_id[:-1]:
+                        aug_graph.add_edge(pre_stem + "_" + str(id+1), current_node_stem + "_" + str(id))
+
+            # Check if succesors are visited and add nodes from new neighbors to their neighbors
+            for suc in nx.DiGraph.successors(graph, current_node):
+                suc_stem = suc[:-2]
+                if aug_graph.node[suc]['visited']:
+                    # Connect with straight edges
+                    for id in list_nodes_id:
+                        aug_graph.add_edge(current_node_stem + "_" + str(id), suc_stem + "_" + str(id))
+
+                    # Connect diagonally to the right
+                    for id in list_nodes_id[1:]:
+                        aug_graph.add_edge(current_node_stem + "_" + str(id-1), suc_stem + "_" + str(id))
+
+                    # Connect diagonally to the left
+                    for id in list_nodes_id[:-1]:
+                        aug_graph.add_edge(current_node_stem + "_" + str(id+1), suc_stem + "_" + str(id))
+
+        aug_graph.node[current_node]['visited'] = True
+
+    return aug_graph
 
 
 
