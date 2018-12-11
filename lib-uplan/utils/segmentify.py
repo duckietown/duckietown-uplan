@@ -11,7 +11,7 @@ import numpy as np
 from duckietown_world.geo import PlacedObject, SE2Transform
 from duckietown_world.geo.measurements_utils import iterate_by_class
 
-from .lane_segment import LaneSegment
+from duckietown_world.world_duckietown.lane_segment import LaneSegment
 
 SkeletonGraphResult = namedtuple('SkeletonGraphResult', 'root root2 G')
 
