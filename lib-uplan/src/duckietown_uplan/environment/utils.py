@@ -2,6 +2,7 @@ import geometry as geo
 from duckietown_world.geo.transforms import SE2Transform
 import numpy as np
 import copy
+import networkx as nx
 
 
 def transform_point(location_SE2, dx, dy, dtheta):
@@ -12,12 +13,13 @@ def transform_point(location_SE2, dx, dy, dtheta):
 
 def move_point(location_SE2, distance, theta):
     new_location = copy.deepcopy(location_SE2)
-    dp = [distance*-np.sin(theta), distance*np.cos(theta)]
-    new_location.p = [(new_location.p[0] + dp[0]), (new_location.p[1] + dp[1])]
+    dp = [distance*np.cos(theta), distance*np.sin(theta)]
+    new_location.theta = theta
+    new_location.p = np.array([(new_location.p[0] + dp[0]), (new_location.p[1] + dp[1])], dtype='float64')
     return new_location
 
 
-def euclidean_distance(self, node1_SE2, node2_SE2):
+def euclidean_distance(node1_SE2, node2_SE2):
     return np.linalg.norm(node1_SE2.p-node2_SE2.p)
 
 
@@ -29,3 +31,72 @@ def is_point_in_bounding_box(point_SE2, bb):
     polygon_points = [bb_p.p for bb_p in bb]
     polygon = Polygon(polygon_points)
     return polygon.contains(point)
+
+
+def get_absolute_position_from_graph(graph):
+    import geometry as geo
+    pos = {}
+    for n in graph:
+        q = graph.nodes[n]['point'].as_SE2()
+        t, _ = geo.translation_angle_from_SE2(q)
+        pos[n] = t
+    return pos
+
+
+def draw_graphs(graphs, with_labels=False, node_colors=None, edge_colors=None, save=False,
+                folder='../', file_index=None):
+    import networkx as nx
+    from matplotlib import pyplot as plt
+    if node_colors is None:
+        node_colors = ['red'] * len(graphs)
+
+    if edge_colors is None:
+        edge_colors = ['balck'] * len(graphs)
+
+    plt.figure(figsize=(12, 12))
+    for i in range(len(graphs)):
+        curr_pos = get_absolute_position_from_graph(graphs[i])
+        nx.draw(graphs[i], curr_pos, with_labels=with_labels, node_size=10, node_color=node_colors[0],
+                edge_color=edge_colors[i])
+    fig_to_save = plt.gcf()
+    plt.axis('off')
+    plt.show()
+    plt.draw()
+    if save:
+        fig_to_save.savefig(folder + "/file%02d.png" % file_index)
+
+
+def create_graph_from_polygon(polygon_nodes):
+    bb_graph = nx.MultiDiGraph()
+    for i in range(len(polygon_nodes)):
+        bb_graph.add_node('node_'+str(i), point=polygon_nodes[i])
+    #create edges now
+    for i in range(len(polygon_nodes) - 1):
+        bb_graph.add_edge('node_'+str(i), 'node_'+str(i + 1))
+    bb_graph.add_edge('node_' + str(len(polygon_nodes)-1), 'node_' + str(0))
+
+    return bb_graph
+
+
+def create_graph_from_path(path_nodes):
+    bb_graph = nx.MultiDiGraph()
+    for i in range(len(path_nodes)):
+        bb_graph.add_node('node_'+str(i), point=path_nodes[i])
+    #create edges now
+    for i in range(len(path_nodes) - 1):
+        bb_graph.add_edge('node_'+str(i), 'node_'+str(i + 1))
+
+    return bb_graph
+
+
+def get_closest_neighbor(graph, node_location):
+    closest_node = None
+    min_distance = float('inf')
+    for neighbor in graph.nodes(data=True):
+        neighbor_name = neighbor[0]
+        neighbor_location = neighbor[1]['point']
+        curr_distance = euclidean_distance(node_location, neighbor_location)
+        if curr_distance < min_distance:
+            min_distance = curr_distance
+            closest_node = neighbor
+    return [closest_node], min_distance
