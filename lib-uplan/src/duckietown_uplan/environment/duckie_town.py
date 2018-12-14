@@ -60,7 +60,7 @@ class DuckieTown(object):
         random_num = randint(0, len(keys) - 1)
         return self.current_graph.nodes[keys[random_num]], keys[random_num]
 
-    def render_current_graph(self, save=False, folder='.', file_index=None):
+    def render_current_graph(self, save=False, folder='.', file_index=None, display=False):
         # create a graph from each duckiebot
         final_graphs = [self.current_graph]
         node_colors = ['pink']
@@ -78,7 +78,8 @@ class DuckieTown(object):
                 node_colors.append('red')
                 edge_colors.append('red')
         draw_graphs(final_graphs, with_labels=False, node_colors=node_colors,
-                    edge_colors=edge_colors, save=save, folder=folder, file_index=file_index)
+                    edge_colors=edge_colors, save=save, folder=folder, file_index=file_index,
+                    display=display)
 
     def draw_map_with_lanes(self):
         from duckietown_world.svg_drawing.ipython_utils import ipython_draw_html
@@ -181,7 +182,7 @@ class DuckieTown(object):
             self.current_occupied_nodes.extend(self.get_duckie_safe_foot_print(duckie.id))
         return
 
-    def step(self, time_in_seconds, display=False, folder='./data', file_index=0):
+    def step(self, time_in_seconds, display=False, save=False, folder='./data', file_index=0):
         for duckie in self.duckie_citizens:
             observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
             foot_print = self.get_duckie_foot_print(duckie.id)
@@ -191,11 +192,15 @@ class DuckieTown(object):
             duckie.set_safe_foot_print(safe_foot_print)
             duckie.move(time_in_seconds)
             self.update_blocked_nodes()
-            if display:
-                self.render_current_graph(save=True, folder=folder, file_index=file_index)
+            if display or save:
+                self.render_current_graph(display=display,
+                                          save=save, folder=folder,
+                                          file_index=file_index)
         return
 
     def reset(self, display=False, folder='./data', file_index=0):
+        self.current_occupied_nodes = []
+        self.duckie_citizens = []
         for duckie in self.duckie_citizens:
             observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
             foot_print = self.get_duckie_foot_print(duckie.id)
@@ -210,8 +215,9 @@ class DuckieTown(object):
 
     def create_random_targets_for_all_duckies(self):
         for duckie in self.duckie_citizens:
-            _, random_end_node_name = self.get_random_node_in_graph()
-            duckie.set_target_destination(random_end_node_name)
+            if duckie.is_stationary():
+                _, random_end_node_name = self.get_random_node_in_graph()
+                duckie.set_target_destination(random_end_node_name)
         return
 
     def is_duckie_violating(self, duckie):
