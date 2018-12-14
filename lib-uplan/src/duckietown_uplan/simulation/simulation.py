@@ -11,7 +11,6 @@ class ConstantProbabiltiySim(object):
     def __init__(self, current_map, number_of_duckies):
         self.duckie_town = DuckieTown(current_map)
         self.duckie_town.augment_graph()
-        self.duckie_town.render_current_graph()
         self.duckie_town.spawn_random_duckie(number_of_duckies)
         self.duckie_town.get_duckie(0).set_visible_path(True)
 
@@ -25,17 +24,20 @@ class ConstantProbabiltiySim(object):
     def execute_simulation_video(self, time_in_seconds):
         import os
         import cv2
+        import shutil
         folder_path = './data'
         os.mkdir(folder_path)
-        video_name = 'simulation.avi'
+        video_name = 'simulation_vid.avi'
         time_per_step = 0.5
         num_of_steps = int(time_in_seconds / time_per_step)
         for i in range(num_of_steps):
             self.duckie_town.create_random_targets_for_all_duckies()
+            print("Step number", i)
             self.duckie_town.step(time_per_step, display=False, save=True, folder='./data', file_index=i)
 
         images = [img for img in os.listdir(folder_path) if img.endswith(".png")]
         images = sorted(images, key=lambda x: int(os.path.splitext(x)[0].split('file')[1]))
+        print(images)
         frame = cv2.imread(os.path.join(folder_path, images[0]))
         height, width, layers = frame.shape
         video = cv2.VideoWriter(video_name, -1, 1, (width, height))
@@ -43,8 +45,7 @@ class ConstantProbabiltiySim(object):
             video.write(cv2.imread(os.path.join(folder_path, image)))
         cv2.destroyAllWindows()
         video.release()
-
-        os.rmdir(folder_path)
+        shutil.rmtree(folder_path)
 
     def render_current_state(self):
         self.duckie_town.render_current_graph()

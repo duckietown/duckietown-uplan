@@ -129,7 +129,7 @@ class DuckieTown(object):
                                        self.index_to_node,
                                        self.collision_matrix)#takes a lot of time for now TODO: need to be optimized
             self.duckie_citizens.append(new_duckie)
-            self.update_blocked_nodes()
+        self.update_blocked_nodes()
         return
 
     def get_duckie_citizens(self):
@@ -191,11 +191,11 @@ class DuckieTown(object):
             duckie.set_foot_print(foot_print)
             duckie.set_safe_foot_print(safe_foot_print)
             duckie.move(time_in_seconds)
-            self.update_blocked_nodes()
-            if display or save:
-                self.render_current_graph(display=display,
-                                          save=save, folder=folder,
-                                          file_index=file_index)
+        self.update_blocked_nodes()
+        if display or save:
+            self.render_current_graph(display=display,
+                                      save=save, folder=folder,
+                                      file_index=file_index)
         return
 
     def reset(self, display=False, folder='./data', file_index=0):
@@ -209,8 +209,8 @@ class DuckieTown(object):
             duckie.set_foot_print(foot_print)
             duckie.set_safe_foot_print(safe_foot_print)
             self.update_blocked_nodes()
-            if display:
-                self.render_current_graph(save=True, folder=folder, file_index=file_index)
+        if display:
+            self.render_current_graph(save=True, folder=folder, file_index=file_index)
         return
 
     def create_random_targets_for_all_duckies(self):

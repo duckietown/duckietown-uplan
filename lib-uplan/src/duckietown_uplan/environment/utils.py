@@ -70,11 +70,13 @@ def draw_graphs(graphs, with_labels=False, node_colors=None, edge_colors=None, s
                 edge_color=edge_colors[i])
     fig_to_save = plt.gcf()
     plt.axis('off')
+    print(display)
     if display:
         plt.show()
         plt.draw()
     if save:
-        fig_to_save.savefig(folder + "/file%04d.png" % file_index)
+        print(file_index)
+        fig_to_save.savefig(folder + "/file%02d.png" % file_index)
 
 
 def create_graph_from_polygon(polygon_nodes):
