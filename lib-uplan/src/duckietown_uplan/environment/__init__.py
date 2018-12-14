@@ -1,5 +1,5 @@
 # coding=utf-8
-from .duckie import *
 from .duckie_town import *
+from .duckie import *
 from .utils import *
 from .constant import *

@@ -33,6 +33,17 @@ def is_point_in_bounding_box(point_SE2, bb):
     return polygon.contains(point)
 
 
+def is_bounding_boxes_intersect(bb1, bb2):
+    from shapely.geometry import Point
+    from shapely.geometry.polygon import Polygon
+    polygon_points_1 = [bb_p.p for bb_p in bb1]
+    polygon_points_2 = [bb_p.p for bb_p in bb2]
+    polygon_1 = Polygon(polygon_points_1)
+    polygon_2 = Polygon(polygon_points_2)
+    return polygon_1.intersects(polygon_2)
+
+
+
 def get_absolute_position_from_graph(graph):
     import geometry as geo
     pos = {}
@@ -99,4 +110,4 @@ def get_closest_neighbor(graph, node_location):
         if curr_distance < min_distance:
             min_distance = curr_distance
             closest_node = neighbor
-    return [closest_node], min_distance
+    return closest_node, min_distance

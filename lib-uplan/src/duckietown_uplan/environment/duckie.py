@@ -8,7 +8,7 @@ import geometry as geo
 from duckietown_world.geo.transforms import SE2Transform
 from duckietown_uplan.environment.utils import move_point, euclidean_distance, is_point_in_bounding_box
 from duckietown_uplan.environment.constant import Constants as CONSTANTS
-
+from duckietown_uplan.algo.path_planning import PathPlanner
 
 
 class Duckie(object):
@@ -20,15 +20,37 @@ class Duckie(object):
         self.velocity = velocity #cm/s
         self.current_path = [] #stack
         self.motor_off = False
+        self.destination_node = None
         self.current_observed_nodes = None
         self.current_observed_duckies = None
+        self.current_foot_print = None
+        self.current_safe_foot_print = None
         self.has_visible_path = False
+        self.env_graph = None
+        self.path_planner = None
 
-    def move(self, time_in_seconds):
+    def map_environment(self, graph, node_to_index, index_to_node, collision_matrix):
+        #args need to be refactored
+        self.env_graph = graph
+        self.path_planner = PathPlanner(self.env_graph,
+                                        length=self.size_y,
+                                        width=self.size_x,
+                                        node_to_index=node_to_index,
+                                        index_to_node=index_to_node,
+                                        collision_matrix=collision_matrix
+                                        )
+        return
+
+    def move(self, time_in_seconds, replan=True):
         """
         TODO: take in consideration smooth turns and case where the duckie is not exactly on a trajectory
         TODO: currently assuming that duckies are always on a path
         """
+        if replan:
+            self.current_path = self.path_planner.get_shortest_path(self.current_position,
+                                                                    self.destination_node,
+                                                                    self.retrieve_observed_duckies_locs())
+
         if self.motor_off:
             return
         distance_to_travel = self.velocity*time_in_seconds
@@ -76,6 +98,10 @@ class Duckie(object):
         self.current_path.extend(path)
         return
 
+    def set_target_destination(self, destination_node):
+        self.destination_node = destination_node
+        return
+
     def stop_movement(self):
         self.motor_off = True
         return
@@ -83,8 +109,8 @@ class Duckie(object):
     def is_stationary(self):
         return self.motor_off
 
-    def retrieve_observed_duckies(self):
-        return [duckie.id for duckie in self.current_observed_duckies]
+    def retrieve_observed_duckies_locs(self):
+        return [duckie.get_current_positon() for duckie in self.current_observed_duckies]
 
     def retrieve_observed_nodes(self):
         return self.current_observed_nodes
@@ -92,42 +118,37 @@ class Duckie(object):
     def set_visible_path(self, value):
         self.has_visible_path = value
 
-    """
-    This function is only used for the simulation purposes,
-    we won't need to set the current_frame when deploying on the duckiebot
-    """
-    def set_current_frame(self, global_duckies, map_graph):
-        #get observed duckies
-        self.current_observed_duckies = []
-        for duckie in global_duckies:
-            if is_point_in_bounding_box(duckie.current_position, self.get_field_of_view()):
-                self.current_observed_duckies.append(duckie)
-        #get observed nodes
-        self.current_observed_nodes = []
-        for node in map_graph.nodes(data=True):
-            node_data = node[1]
-            if is_point_in_bounding_box(node_data['point'], self.get_field_of_view()):
-                self.current_observed_nodes.append(node)
+    def set_current_frame(self, observed_duckies, observed_nodes):
+        self.current_observed_duckies = observed_duckies
+        self.current_observed_nodes = observed_nodes
+        return
+
+    def set_foot_print(self, foot_print):
+        self.current_foot_print = foot_print
+        return
+
+    def set_safe_foot_print(self, safe_foot_print):
+        self.current_safe_foot_print = safe_foot_print
         return
 
     def get_field_of_view(self):
         # BB ll, lr, ul, ur
         bounding_box = []
         # lower_right
-        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.duckie_width/2, CONSTANTS.FOV_horizontal], 0)
+        relative_transform = geo.SE2_from_translation_angle([self.size_x/2, self.size_y/2], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
         # lower_left
-        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.duckie_width/2, -CONSTANTS.FOV_horizontal], 0)
+        relative_transform = geo.SE2_from_translation_angle([self.size_x/2, -self.size_y/2], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
         # upper left
-        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.FOV_vertical + CONSTANTS.duckie_width/2,
+        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.FOV_vertical + self.size_x/2,
                                                              -CONSTANTS.FOV_horizontal], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
         # upper right
-        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.FOV_vertical + CONSTANTS.duckie_width/2,
+        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.FOV_vertical + self.size_x/2,
                                                              CONSTANTS.FOV_horizontal], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
@@ -138,27 +159,45 @@ class Duckie(object):
         # BB ll, lr, ul, ur
         bounding_box = []
         # lower_right
-        relative_transform = geo.SE2_from_translation_angle([-CONSTANTS.duckie_width/2, -CONSTANTS.duckie_height/2], 0)
+        relative_transform = geo.SE2_from_translation_angle([-self.size_x/2, -self.size_y/2], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
         # lower_left
-        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.duckie_width/2, -CONSTANTS.duckie_height/2], 0)
+        relative_transform = geo.SE2_from_translation_angle([self.size_x/2, -self.size_y/2], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
         # upper left
-        relative_transform = geo.SE2_from_translation_angle([CONSTANTS.duckie_width/2, CONSTANTS.duckie_height/2], 0)
+        relative_transform = geo.SE2_from_translation_angle([self.size_x/2, self.size_y/2], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
         # upper right
-        relative_transform = geo.SE2_from_translation_angle([-CONSTANTS.duckie_width/2, CONSTANTS.duckie_height/2], 0)
+        relative_transform = geo.SE2_from_translation_angle([-self.size_x/2, self.size_y/2], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))
 
         return bounding_box
 
+    def get_duckie_safe_bounding_box(self):
+        # BB ll, lr, ul, ur
+        bounding_box = []
+        # lower_right
+        safe_dist = 0.01
+        relative_transform = geo.SE2_from_translation_angle([-self.size_x/2 - safe_dist, -self.size_y/2 - safe_dist], 0)
+        transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
+        bounding_box.append(SE2Transform.from_SE2(transform))
+        # lower_left
+        relative_transform = geo.SE2_from_translation_angle([self.size_x/2 + safe_dist, -self.size_y/2 - safe_dist], 0)
+        transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
+        bounding_box.append(SE2Transform.from_SE2(transform))
+        # upper left
+        relative_transform = geo.SE2_from_translation_angle([self.size_x/2 + safe_dist, self.size_y/2 + safe_dist], 0)
+        transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
+        bounding_box.append(SE2Transform.from_SE2(transform))
+        # upper right
+        relative_transform = geo.SE2_from_translation_angle([-self.size_x/2 - safe_dist, self.size_y/2 + safe_dist], 0)
+        transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
+        bounding_box.append(SE2Transform.from_SE2(transform))
 
-
-
-
+        return bounding_box
 
 
