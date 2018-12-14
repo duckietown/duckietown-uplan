@@ -58,18 +58,18 @@ class Duckie(object):
         moving_position = self.current_position
         while(distance_travelled < distance_to_travel):
             #pick next control point
+            if len(self.current_path) == 0:
+                return
             target_node = self.current_path[0]
             #measure euclidean distance
             distance_to_next_ctrl_pt = euclidean_distance(target_node, moving_position)
             if distance_to_next_ctrl_pt <= (distance_to_travel - distance_travelled):
                 #pop the control point and go on next one
-                print('going to target_node')
                 moving_position = target_node
                 distance_travelled = distance_travelled + distance_to_next_ctrl_pt
                 self.current_path.pop(0)
                 continue
             else:
-                print('going to move_point')
                 #go somewhere close to the next control point
                 moving_position = move_point(location_SE2=moving_position,
                                              distance=distance_to_travel - distance_travelled,
@@ -77,7 +77,6 @@ class Duckie(object):
                 distance_travelled = distance_to_travel
 
         self.current_position = moving_position
-        print(self.current_position)
         return
 
     def get_current_positon(self):
@@ -107,7 +106,7 @@ class Duckie(object):
         return
 
     def is_stationary(self):
-        return self.motor_off
+        return self.motor_off or len(self.current_path) == 0
 
     def retrieve_observed_duckies_locs(self):
         return [duckie.get_current_positon() for duckie in self.current_observed_duckies]

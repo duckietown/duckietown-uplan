@@ -46,21 +46,22 @@ class PathPlanner(object):
         return mod_graph
 
     def get_shortest_path(self, start, end, occupancy_node_locs):
-        # start_nodes, _ = get_closest_neighbor(self.graph, start)
-        # start_node_name = start_nodes[0][0]
-        # path_node_names = nx.shortest_path(self.graph, start_node_name, end)
-        # path_nodes = [self.graph.nodes[path_node_name]['point'] for path_node_name in path_node_names]
-        # return path_nodes
         from duckietown_uplan.environment.utils import get_closest_neighbor
-
-        print(occupancy_node_locs)
-        #occupancy nodes should take care of the footprint of the duckie
-        occupancy_nodes = [get_closest_neighbor(self.graph, occupancy_node_loc)[0]
-                           for occupancy_node_loc in occupancy_node_locs]
-        print(occupancy_nodes)
-        occupancy_vector = occupancy_nodes
-        #create occupancy_vector
-        mod_graph = self._build_mod_graph(occupancy_vector)
-        path = nx.shortest_path(mod_graph, start, end, weight='blocked_weight') #shortest collision free path
-        return path
+        start_node, _ = get_closest_neighbor(self.graph, start)
+        start_node_name = start_node[0]
+        path_node_names = nx.shortest_path(self.graph, start_node_name, end)
+        path_nodes = [self.graph.nodes[path_node_name]['point'] for path_node_name in path_node_names]
+        return path_nodes
+        #
+        #
+        # print(occupancy_node_locs)
+        # #occupancy nodes should take care of the footprint of the duckie
+        # occupancy_nodes = [get_closest_neighbor(self.graph, occupancy_node_loc)[0]
+        #                    for occupancy_node_loc in occupancy_node_locs]
+        # print(occupancy_nodes)
+        # occupancy_vector = occupancy_nodes
+        # #create occupancy_vector
+        # mod_graph = self._build_mod_graph(occupancy_vector)
+        # path = nx.shortest_path(mod_graph, start, end, weight='blocked_weight') #shortest collision free path
+        # return path
 
