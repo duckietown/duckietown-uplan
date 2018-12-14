@@ -106,7 +106,7 @@ class Duckie(object):
         return
 
     def is_stationary(self):
-        return self.motor_off or len(self.current_path) == 0
+        return self.motor_off or (len(self.current_path) == 0)
 
     def retrieve_observed_duckies_locs(self):
         return [duckie.get_current_positon() for duckie in self.current_observed_duckies]
