@@ -49,8 +49,12 @@ class Duckie(object):
         TODO: currently assuming that duckies are always on a path
         """
         print("Started move function")
+        if len(self.current_path) > 0 and (self.current_position == self.current_path[0].as_SE2()).all():
+            self.current_path.pop(0)
+
         if len(self.current_path) == 0:
             return
+
         if replan or not self.first_time_plan:
             self.first_time_plan = True
             self.current_path = self.path_planner.get_shortest_path(self.current_position,
@@ -80,7 +84,7 @@ class Duckie(object):
             # p_pose, theta_pose = geo.translation_angle_from_SE2(pose)
             dist += geo.SE2.distances(old_pose, pose)[1]
             if (pose == self.current_path[0].as_SE2()).all():
-                self.current_path.pop(0)
+                self.current_path.pop(0) #possible bug here, list index out of range sometimes
             old_pose = pose
 
         p, theta = geo.translation_angle_from_SE2(old_pose)
@@ -136,6 +140,8 @@ class Duckie(object):
 
     def set_target_destination(self, destination_node):
         self.destination_node = destination_node
+        self.current_path = self.path_planner.get_shortest_path(self.current_position,
+                                                                self.destination_node)
         return
 
     def stop_movement(self):

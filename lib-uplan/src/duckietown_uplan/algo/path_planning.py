@@ -45,7 +45,7 @@ class PathPlanner(object):
 
         return mod_graph
 
-    def get_shortest_path(self, start, end, occupancy_node_locs):
+    def get_shortest_path(self, start, end, occupancy_node_locs=None):
         from duckietown_uplan.environment.utils import get_closest_neighbor
         start_node, _ = get_closest_neighbor(self.graph, start)
         start_node_name = start_node[0]
