@@ -54,7 +54,7 @@ def pub_markers(msg):
             pt.z = 0
             marker.points.append(pt)
 
-    rospy.loginfo(marker.points)
+    #rospy.loginfo(marker.points)
     pub.publish(marker)
     return
 

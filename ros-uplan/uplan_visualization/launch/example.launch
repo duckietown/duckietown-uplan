@@ -1,10 +1,10 @@
 <launch>
 
-    <node pkg="uplan_visualization" name="duckiebot_pose_publisher"
+    <!--node pkg="uplan_visualization" name="duckiebot_pose_publisher"
         type="publish_poses.py" output="screen">
         <rosparam command="load"
             file="$(find uplan_visualization)/config/example.yaml" />
-    </node>
+    </node-->
 
     <node pkg="uplan_visualization" name="duckieInfoSub"
         type="publish_trajec.py" output="screen">
@@ -20,8 +20,8 @@
 
     <node pkg="uplan_visualization" name="duckieInfoPub"
         type="publish_duckieData.py" output="screen">
-        <!--rosparam command="load"
-            file="$(find uplan_visualization)/config/example.yaml" /-->
+        <rosparam command="load"
+            file="$(find uplan_visualization)/config/example.yaml" />
     </node>
 
     <include
@@ -40,6 +40,6 @@
     <node pkg="tf"
         type="static_transform_publisher"
         name="map_to_duckiebot_link_broadcaster"
-        args="1 1 0 0 0 0 map duckiebot_link 10" />
+        args="0 0 0 0 0 0 map duckiebot_link 10" />
 
 </launch>

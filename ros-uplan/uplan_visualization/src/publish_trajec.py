@@ -31,13 +31,13 @@ duckieVec.duckie_data = [duckieMsg]
 pub = rospy.Publisher('trajectory_markers', MarkerArray, queue_size=10)
 
 def pub_markers(msg):
-    rospy.loginfo(msg)
+    #rospy.loginfo(msg)
     duckieVec = duckieStruct()
     marker_array = MarkerArray()
     duckieVec = msg.duckie_data
     id = 0
     for d in range(len(duckieVec)):
-        rospy.loginfo(duckieVec[d].label)
+        #rospy.loginfo(duckieVec[d].label)
         trajVec = duckieVec[d].SE2points
 
         for t in range(len(trajVec)):
