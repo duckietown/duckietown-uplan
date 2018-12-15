@@ -70,12 +70,10 @@ def draw_graphs(graphs, with_labels=False, node_colors=None, edge_colors=None, s
                 edge_color=edge_colors[i])
     fig_to_save = plt.gcf()
     plt.axis('off')
-    print(display)
     if display:
         plt.show()
         plt.draw()
     if save:
-        print(file_index)
         fig_to_save.savefig(folder + "/file%02d.png" % file_index)
 
 
@@ -113,3 +111,11 @@ def get_closest_neighbor(graph, node_location):
             min_distance = curr_distance
             closest_node = neighbor
     return closest_node, min_distance
+
+
+def interpolate(q0, q1, alpha):
+    q1_from_q0 = geo.SE2.multiply(geo.SE2.inverse(q0), q1)
+    vel = geo.SE2.algebra_from_group(q1_from_q0)
+    rel = geo.SE2.group_from_algebra(vel * alpha)
+    q = geo.SE2.multiply(q0, rel)
+    return q

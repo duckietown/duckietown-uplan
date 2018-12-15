@@ -15,7 +15,7 @@ class ConstantProbabiltiySim(object):
         self.duckie_town.get_duckie(0).set_visible_path(True)
 
     def execute_simulation(self, time_in_seconds):
-        time_per_step = 0.5
+        time_per_step = 1
         num_of_steps = int(time_in_seconds / time_per_step)
         for i in range(num_of_steps):
             self.duckie_town.create_random_targets_for_all_duckies()
@@ -28,16 +28,14 @@ class ConstantProbabiltiySim(object):
         folder_path = './data'
         os.mkdir(folder_path)
         video_name = 'simulation_vid.avi'
-        time_per_step = 0.5
+        time_per_step = 1
         num_of_steps = int(time_in_seconds / time_per_step)
         for i in range(num_of_steps):
             self.duckie_town.create_random_targets_for_all_duckies()
-            print("Step number", i)
             self.duckie_town.step(time_per_step, display=False, save=True, folder='./data', file_index=i)
 
         images = [img for img in os.listdir(folder_path) if img.endswith(".png")]
         images = sorted(images, key=lambda x: int(os.path.splitext(x)[0].split('file')[1]))
-        print(images)
         frame = cv2.imread(os.path.join(folder_path, images[0]))
         height, width, layers = frame.shape
         video = cv2.VideoWriter(video_name, -1, 1, (width, height))

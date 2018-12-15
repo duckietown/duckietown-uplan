@@ -90,7 +90,7 @@ class DuckieTown(object):
         new_duckie = Duckie(len(self.duckie_citizens),
                             CONSTANTS.duckie_width,
                             CONSTANTS.duckie_height,
-                            velocity=0.05,
+                            velocity=0.25,
                             position=SE2_location)
         for duckie in self.duckie_citizens:
             if is_bounding_boxes_intersect(duckie.get_duckie_safe_bounding_box(),
@@ -117,7 +117,7 @@ class DuckieTown(object):
                 new_duckie = Duckie(len(self.duckie_citizens),
                                     CONSTANTS.duckie_width,
                                     CONSTANTS.duckie_height,
-                                    velocity=0.05,
+                                    velocity=0.25,
                                     position=random_node['point'])
                 for duckie in self.duckie_citizens:
                     if is_bounding_boxes_intersect(duckie.get_duckie_safe_bounding_box(),
@@ -185,11 +185,11 @@ class DuckieTown(object):
     def step(self, time_in_seconds, display=False, save=False, folder='./data', file_index=0):
         for duckie in self.duckie_citizens:
             observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
-            foot_print = self.get_duckie_foot_print(duckie.id)
-            safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
+            # foot_print = self.get_duckie_foot_print(duckie.id)
+            # safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
             duckie.set_current_frame(observed_duckies, observed_nodes)
-            duckie.set_foot_print(foot_print)
-            duckie.set_safe_foot_print(safe_foot_print)
+            # duckie.set_foot_print(foot_print)
+            # duckie.set_safe_foot_print(safe_foot_print)
             duckie.move(time_in_seconds)
         self.update_blocked_nodes()
         if display or save:
