@@ -25,14 +25,15 @@ def pub_markers(msg):
     duckieVec = msg.duckie_data
     marker = Marker()
     pointVec = []
-
+    id = 0
     # For uncertainty, the struct will always be length 1
     for d in range(len(duckieVec)):
         ptVec = duckieVec[d].SE2points
 
-        marker.header.frame_id = "/duckiebot_link" #??
-        marker.id = 1869
+        marker.header.frame_id = "/duckiebot_link"
+        marker.id = 1
         marker.ns = "uncertainty"
+        # id = id + 1
         marker.type = marker.POINTS
         marker.action = marker.ADD
 

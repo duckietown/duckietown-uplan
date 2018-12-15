@@ -8,20 +8,14 @@
 
     <node pkg="uplan_visualization" name="duckieInfoSub"
         type="publish_trajec.py" output="screen">
-        <rosparam command="load"
-            file="$(find uplan_visualization)/config/example.yaml" />
     </node>
 
     <node pkg="uplan_visualization" name="duckieUncertaintySub"
         type="publish_uncertainty.py" output="screen">
-        <rosparam command="load"
-            file="$(find uplan_visualization)/config/example.yaml" />
     </node>
 
     <node pkg="uplan_visualization" name="duckieInfoPub"
         type="publish_duckieData.py" output="screen">
-        <rosparam command="load"
-            file="$(find uplan_visualization)/config/example.yaml" />
     </node>
 
     <include
@@ -33,8 +27,9 @@
 
     <include
     file="$(find duckietown_visualization)/launch/publish_duckiebots.launch">
+        <!--arg name="duckiebot_num" value=2/-->
         <arg name="duckiebot_list"
-            value="$(find visualization_example)/config/example.yaml"/>
+            value="$(find uplan_visualization)/config/example.yaml"/>
     </include>
 
     <node pkg="tf"

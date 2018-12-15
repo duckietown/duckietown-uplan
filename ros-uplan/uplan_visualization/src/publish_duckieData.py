@@ -6,6 +6,7 @@ import random
 import geometry_msgs.msg
 import contracts
 contracts.disable_all()
+import yaml
 
 from std_msgs.msg import String
 from std_msgs.msg import Float64
@@ -57,11 +58,13 @@ duckie_town = DuckieTown(current_map)
 duckie_town.augment_graph()
 #duckie_town.render_current_graph()
 duckie_town.spawn_random_duckie(number_of_duckies)
+#with open('../src/example.yaml', 'w') as outfile:
+#     yaml.dump(a, outfile, default_flow_style=False)
 duckie_town.get_duckie(0).set_visible_path(True)
 
 def execute_simulation():
     duckie_town.create_random_targets_for_all_duckies()
-    #duckie_town.step(0.1, display=False)
+    duckie_town.step(0.1, display=False)
     duckies_list = []
     duckieVec = duckieStruct()
     duckiePose = []
@@ -81,6 +84,7 @@ def execute_simulation():
             trac1.x = current_SE2.p[0]
             trac1.y = current_SE2.p[1]
             trac1.theta = current_SE2.theta
+            path.append(trac1)
             if c == 0:
                 duckiePose.append((current_SE2.p[0], current_SE2.p[1], current_SE2.theta))
         velocity = [0.5] * (len(path)-1)

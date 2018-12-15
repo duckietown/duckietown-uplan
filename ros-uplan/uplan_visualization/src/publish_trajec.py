@@ -39,7 +39,8 @@ def pub_markers(msg):
     for d in range(len(duckieVec)):
         #rospy.loginfo(duckieVec[d].label)
         trajVec = duckieVec[d].SE2points
-
+        print("lenght")
+        print(len(trajVec))
         for t in range(len(trajVec)):
             marker = Marker()
 
