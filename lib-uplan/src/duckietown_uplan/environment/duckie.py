@@ -134,6 +134,10 @@ class Duckie(object):
     def get_path(self):
         return self.current_path
 
+    def get_max_radius(self):
+        dif = self.current_position.p - self.get_field_of_view()[-1].p
+        return np.linalg.norm(dif)
+
     def append_path(self, path):
         self.current_path.extend(path)
         return

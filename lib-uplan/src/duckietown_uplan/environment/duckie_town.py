@@ -34,7 +34,7 @@ class DuckieTown(object):
     def get_map_original_graph(self):
         return dw.get_skeleton_graph(self.original_map).G
 
-    def get_map_current_graph(self):
+    def get_current_graph(self):
         return self.current_graph
 
     def augment_graph(self):
