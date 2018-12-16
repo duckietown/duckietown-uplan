@@ -47,10 +47,10 @@ class PathPlanner(object):
 
     def get_shortest_path(self, start, end, occupancy_node_locs=None):
         from duckietown_uplan.environment.utils import get_closest_neighbor
-        start_node, _ = get_closest_neighbor(self.graph, start)
-        start_node_name = start_node[0]
+        start_node_name, _ = get_closest_neighbor(self.graph, start)
         path_node_names = nx.shortest_path(self.graph, start_node_name, end)
-        path_nodes = [self.graph.nodes[path_node_name]['point'] for path_node_name in path_node_names]
+        path_nodes = [(path_node_name, self.graph.nodes(data=True)[path_node_name])
+                      for path_node_name in path_node_names]
         return path_nodes
         #
         #

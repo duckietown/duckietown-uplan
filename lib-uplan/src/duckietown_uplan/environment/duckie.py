@@ -6,7 +6,8 @@ __all__ = [
 ]
 import geometry as geo
 from duckietown_world.geo.transforms import SE2Transform
-from duckietown_uplan.environment.utils import move_point, euclidean_distance, is_point_in_bounding_box, interpolate
+from duckietown_uplan.environment.utils import move_point, euclidean_distance, \
+    is_point_in_bounding_box, interpolate, get_closest_neighbor
 from duckietown_uplan.environment.constant import Constants as CONSTANTS
 from duckietown_uplan.algo.path_planning import PathPlanner
 import numpy as np
@@ -29,7 +30,7 @@ class Duckie(object):
         self.has_visible_path = False
         self.env_graph = None
         self.path_planner = None
-        self.first_time_plan = False
+        self.my_closest_control_point = None
 
     def map_environment(self, graph, node_to_index, index_to_node, collision_matrix):
         #args need to be refactored
@@ -41,6 +42,7 @@ class Duckie(object):
                                         index_to_node=index_to_node,
                                         collision_matrix=collision_matrix
                                         )
+        self.my_closest_control_point, _ = get_closest_neighbor(graph, self.current_position)
         return
 
     def move(self, time_in_seconds, replan=False):
@@ -49,17 +51,19 @@ class Duckie(object):
         TODO: currently assuming that duckies are always on a path
         """
         print("Started move function")
-        if len(self.current_path) > 0 and (self.current_position == self.current_path[0].as_SE2()).all():
-            self.current_path.pop(0)
+        path_nodes = [path_node[1]['point'] for path_node in self.current_path]
+        if len(self.current_path) > 0 and (self.current_position == path_nodes[0].as_SE2()).all():
+            my_closest_control_point = self.current_path.pop(0)
+            self.my_closest_control_point = my_closest_control_point[0]
 
         if len(self.current_path) == 0:
             return
 
-        if replan or not self.first_time_plan:
-            self.first_time_plan = True
+        if replan:
             self.current_path = self.path_planner.get_shortest_path(self.current_position,
                                                                     self.destination_node,
                                                                     self.retrieve_observed_duckies_locs())
+            path_nodes = [path_node[1]['point'] for path_node in self.current_path]
 
         if self.motor_off:
             return
@@ -67,7 +71,7 @@ class Duckie(object):
         steps = np.linspace(0, 1, num_alpha)
         q0 = self.current_position.as_SE2()
         seqs = []
-        for cp in self.current_path:
+        for cp in path_nodes:
             q1 = cp.as_SE2()
             for alpha in steps:
                 q = interpolate(q0, q1, alpha)
@@ -83,8 +87,11 @@ class Duckie(object):
             # p_old, theta_old = geo.translation_angle_from_SE2(old_pose)
             # p_pose, theta_pose = geo.translation_angle_from_SE2(pose)
             dist += geo.SE2.distances(old_pose, pose)[1]
-            if (pose == self.current_path[0].as_SE2()).all():
-                self.current_path.pop(0) #possible bug here, list index out of range sometimes
+            if (pose == path_nodes[0].as_SE2()).all():
+                #possible bug here, list index out of range sometimes
+                path_nodes.pop(0)
+                my_closest_control_point = self.current_path.pop(0)
+                self.my_closest_control_point = my_closest_control_point[0]
             old_pose = pose
 
         p, theta = geo.translation_angle_from_SE2(old_pose)
@@ -125,7 +132,11 @@ class Duckie(object):
 
     def set_current_positon(self, position):
         self.current_position = position
+        # self.my_closest_control_point, _ = get_closest_neighbor(self.env_graph, self.current_position)
         return
+
+    def get_closest_node(self):
+        return self.my_closest_control_point
 
     def set_path(self, path):
         self.current_path = path
@@ -133,6 +144,9 @@ class Duckie(object):
 
     def get_path(self):
         return self.current_path
+
+    def get_path_SE2(self):
+        return [node_path[1]['point'] for node_path in self.current_path]
 
     def get_max_radius(self):
         dif = self.current_position.p - self.get_field_of_view()[-1].p
@@ -247,4 +261,8 @@ class Duckie(object):
 
         return bounding_box
 
+    def get_current_observations(self):
+        observations = {}
+        for node_name in self.current_observed_nodes:
+            observations[node_name[0]] = 0
 

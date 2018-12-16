@@ -101,7 +101,7 @@ def create_graph_from_path(path_nodes):
 
 
 def get_closest_neighbor(graph, node_location):
-    closest_node = None
+    closest_node_name = None
     min_distance = float('inf')
     for neighbor in graph.nodes(data=True):
         neighbor_name = neighbor[0]
@@ -109,8 +109,8 @@ def get_closest_neighbor(graph, node_location):
         curr_distance = euclidean_distance(node_location, neighbor_location)
         if curr_distance < min_distance:
             min_distance = curr_distance
-            closest_node = neighbor
-    return closest_node, min_distance
+            closest_node_name = neighbor_name
+    return closest_node_name, min_distance
 
 
 def interpolate(q0, q1, alpha):

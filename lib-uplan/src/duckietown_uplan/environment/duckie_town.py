@@ -13,6 +13,7 @@ from duckietown_uplan.environment.constant import Constants as CONSTANTS
 from duckietown_uplan.environment.utils import draw_graphs, create_graph_from_polygon, \
     is_point_in_bounding_box, create_graph_from_path, get_closest_neighbor, is_bounding_boxes_intersect
 from random import randint
+from duckietown_uplan.environment.footprint_table import FootprintTable
 import numpy as np
 
 
@@ -30,6 +31,15 @@ class DuckieTown(object):
             self.node_to_index[name] = i
             self.index_to_node[i] = name
         self.collision_matrix = self._build_collision_matrix()
+        #build the clustered graph with a random duckie
+        random_node, _ = self.get_random_node_in_graph()
+        max_radius = Duckie(-1,
+                              CONSTANTS.duckie_width,
+                              CONSTANTS.duckie_height,
+                              velocity=0.25,
+                              position=random_node['point']).get_max_radius()
+        foot_print_table = FootprintTable(self.current_graph, max_radius)
+        self.clustered_graph = foot_print_table.get_data()
 
     def get_map_original_graph(self):
         return dw.get_skeleton_graph(self.original_map).G
@@ -50,15 +60,25 @@ class DuckieTown(object):
             self.node_to_index[name] = i
             self.index_to_node[i] = name
         self.collision_matrix = self._build_collision_matrix()
+        # build the clustered graph with a random duckie
+        random_node, _ = self.get_random_node_in_graph()
+        max_radius = Duckie(-1,
+                            CONSTANTS.duckie_width,
+                            CONSTANTS.duckie_height,
+                            velocity=0.25,
+                            position=random_node['point']).get_max_radius()
+        foot_print_table = FootprintTable(self.current_graph, max_radius)
+        self.clustered_graph = foot_print_table.get_data()
         return
 
     def get_map(self):
         return self.original_map
 
     def get_random_node_in_graph(self):
-        keys = [node for node in self.current_graph.nodes]
-        random_num = randint(0, len(keys) - 1)
-        return self.current_graph.nodes[keys[random_num]], keys[random_num]
+        random_num = randint(0, len(self.index_to_node)-1)
+        node_name = self.index_to_node[random_num]
+        node = self.current_graph.nodes(data=True)[node_name]
+        return node, node_name
 
     def render_current_graph(self, save=False, folder='.', file_index=None, display=False):
         # create a graph from each duckiebot
@@ -74,7 +94,7 @@ class DuckieTown(object):
             edge_colors.append('blue')
             #add path if visible
             if duckie.has_visible_path:
-                final_graphs.append(create_graph_from_path(duckie.get_path()))
+                final_graphs.append(create_graph_from_path(duckie.get_path_SE2()))
                 node_colors.append('red')
                 edge_colors.append('red')
         draw_graphs(final_graphs, with_labels=False, node_colors=node_colors,
@@ -140,20 +160,28 @@ class DuckieTown(object):
 
     def get_duckie_foot_print(self, duckie_id):
         foot_print = []
-        for node in self.current_graph.nodes(data=True):
-            node_data = node[1]
+        #replacing looping over nodes to looping over cluster
+        # for node in self.current_graph.nodes(data=True):
+        #     node_data = node[1]
+        #     if is_point_in_bounding_box(node_data['point'],
+        #                                 self.duckie_citizens[duckie_id].get_duckie_bounding_box()):
+        #         foot_print.append(node)
+        closest_node = self.duckie_citizens[duckie_id].get_closest_node()
+        for node_name in self.clustered_graph[closest_node]:
+            node_data = self.current_graph.nodes(data=True)[node_name]
             if is_point_in_bounding_box(node_data['point'],
                                         self.duckie_citizens[duckie_id].get_duckie_bounding_box()):
-                foot_print.append(node)
+                foot_print.append((node_name, node_data))
         return foot_print
 
     def get_duckie_safe_foot_print(self, duckie_id):
         safe_foot_print = []
-        for node in self.current_graph.nodes(data=True):
-            node_data = node[1]
+        closest_node = self.duckie_citizens[duckie_id].get_closest_node()
+        for node_name in self.clustered_graph[closest_node]:
+            node_data = self.current_graph.nodes(data=True)[node_name]
             if is_point_in_bounding_box(node_data['point'],
                                         self.duckie_citizens[duckie_id].get_duckie_safe_bounding_box()):
-                safe_foot_print.append(node)
+                safe_foot_print.append((node_name, node_data))
         return safe_foot_print
 
     def get_duckie_current_frame(self, duckie_id):
@@ -164,10 +192,12 @@ class DuckieTown(object):
                 observed_duckies.append(duckie)
         # get observed nodes
         observed_nodes = []
-        for node in self.current_graph.nodes(data=True):
-            node_data = node[1]
+        closest_node = self.duckie_citizens[duckie_id].get_closest_node()
+        for node_name in self.clustered_graph[closest_node]:
+            node_data = self.current_graph.nodes(data=True)[node_name]
             if is_point_in_bounding_box(node_data['point'], self.duckie_citizens[duckie_id].get_field_of_view()):
-                observed_nodes.append(node)
+                observed_nodes.append((node_name, node_data))
+        print('observed some nodes: ', observed_nodes)
         return observed_duckies, observed_nodes
 
     def issue_ticket(self, duckie_id):
@@ -184,13 +214,13 @@ class DuckieTown(object):
 
     def step(self, time_in_seconds, display=False, save=False, folder='./data', file_index=0):
         for duckie in self.duckie_citizens:
-            observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
-            # foot_print = self.get_duckie_foot_print(duckie.id)
-            # safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
-            duckie.set_current_frame(observed_duckies, observed_nodes)
-            # duckie.set_foot_print(foot_print)
-            # duckie.set_safe_foot_print(safe_foot_print)
             duckie.move(time_in_seconds)
+            observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
+            foot_print = self.get_duckie_foot_print(duckie.id)
+            safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
+            duckie.set_current_frame(observed_duckies, observed_nodes)
+            duckie.set_foot_print(foot_print)
+            duckie.set_safe_foot_print(safe_foot_print)
         self.update_blocked_nodes()
         if display or save:
             self.render_current_graph(display=display,
@@ -200,7 +230,6 @@ class DuckieTown(object):
 
     def reset(self, display=False, folder='./data', file_index=0):
         self.current_occupied_nodes = []
-        self.duckie_citizens = []
         for duckie in self.duckie_citizens:
             observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
             foot_print = self.get_duckie_foot_print(duckie.id)
