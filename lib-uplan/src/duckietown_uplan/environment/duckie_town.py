@@ -34,16 +34,16 @@ class DuckieTown(object):
     def get_map_original_graph(self):
         return dw.get_skeleton_graph(self.original_map).G
 
-    def get_map_current_graph(self):
+    def get_current_graph(self):
         return self.current_graph
 
     def augment_graph(self):
         self.skeleton_graph = segmentify.get_skeleton_graph(self.original_map)  # to be changed accordig to Jose
         self.current_graph = GraphAugmenter.augment_graph(self.skeleton_graph.G,
-                                                          num_long=1,
-                                                          num_right=CONSTANTS.aug_num_right,
-                                                          num_left=CONSTANTS.aug_num_left,
-                                                          lat_dist=CONSTANTS.aug_dist)
+                                                          num_long=0,
+                                                          num_right=0,
+                                                          num_left=0,
+                                                          lat_dist=0)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):
@@ -90,7 +90,7 @@ class DuckieTown(object):
         new_duckie = Duckie(len(self.duckie_citizens),
                             CONSTANTS.duckie_width,
                             CONSTANTS.duckie_height,
-                            velocity=0.05,
+                            velocity=0.25,
                             position=SE2_location)
         for duckie in self.duckie_citizens:
             if is_bounding_boxes_intersect(duckie.get_duckie_safe_bounding_box(),
@@ -117,7 +117,7 @@ class DuckieTown(object):
                 new_duckie = Duckie(len(self.duckie_citizens),
                                     CONSTANTS.duckie_width,
                                     CONSTANTS.duckie_height,
-                                    velocity=0.05,
+                                    velocity=0.25,
                                     position=random_node['point'])
                 for duckie in self.duckie_citizens:
                     if is_bounding_boxes_intersect(duckie.get_duckie_safe_bounding_box(),
@@ -185,11 +185,11 @@ class DuckieTown(object):
     def step(self, time_in_seconds, display=False, save=False, folder='./data', file_index=0):
         for duckie in self.duckie_citizens:
             observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
-            foot_print = self.get_duckie_foot_print(duckie.id)
-            safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
+            # foot_print = self.get_duckie_foot_print(duckie.id)
+            # safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
             duckie.set_current_frame(observed_duckies, observed_nodes)
-            duckie.set_foot_print(foot_print)
-            duckie.set_safe_foot_print(safe_foot_print)
+            # duckie.set_foot_print(foot_print)
+            # duckie.set_safe_foot_print(safe_foot_print)
             duckie.move(time_in_seconds)
         self.update_blocked_nodes()
         if display or save:

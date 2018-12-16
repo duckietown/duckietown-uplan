@@ -131,7 +131,6 @@ class GraphAugmenter(object):
 
         return graph
 
-
     @classmethod
     def augment_graph_lateral(cls, graph, num_right=1, num_left=1, lat_dist=0.1):
 
