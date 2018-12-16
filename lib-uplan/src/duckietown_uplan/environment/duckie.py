@@ -33,6 +33,7 @@ class Duckie(object):
         self.path_planner = None
         self.my_closest_control_point = None
         self.observation_model = None
+        self.replan = False
 
     def map_environment(self, graph, node_to_index, index_to_node, collision_matrix):
         #args need to be refactored
@@ -48,53 +49,65 @@ class Duckie(object):
         self.observation_model = ObservationModel(graph)
         return
 
-    def move(self, time_in_seconds, replan=False):
+    def move(self, time_in_seconds):
         """
         TODO: take in consideration smooth turns and case where the duckie is not exactly on a trajectory
         TODO: currently assuming that duckies are always on a path
         """
         print("Started move function")
+
         path_nodes = [path_node[1]['point'] for path_node in self.current_path]
         if len(self.current_path) > 0 and (self.current_position == path_nodes[0].as_SE2()).all():
+            print("reached a control point here pop initial")
             my_closest_control_point = self.current_path.pop(0)
             self.my_closest_control_point = my_closest_control_point[0]
 
         if len(self.current_path) == 0:
             return
-
-        if replan:
-            self.current_path = self.path_planner.get_shortest_path(self.current_position,
+        #replan only when above a control point
+        if self.replan:
+            self.replan = False
+            print('replanning now')
+            self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                     self.destination_node,
                                                                     self.retrieve_observed_duckies_locs())
             path_nodes = [path_node[1]['point'] for path_node in self.current_path]
 
         if self.motor_off:
             return
-        num_alpha = 10
+        num_alpha = 20
         steps = np.linspace(0, 1, num_alpha)
         q0 = self.current_position.as_SE2()
         seqs = []
         for cp in path_nodes:
             q1 = cp.as_SE2()
+            sub_seq = []
             for alpha in steps:
                 q = interpolate(q0, q1, alpha)
-                seqs.append(q)
+                sub_seq.append(q)
+            seqs.extend(sub_seq[1:])
             q0 = q1
 
         distance_to_travel = self.velocity * time_in_seconds
         dist = 0
+        print("distance to travel: ", distance_to_travel)
+        print("distance to next control point is : ", geo.SE2.distances(self.current_position.as_SE2(),
+                                                                        path_nodes[0].as_SE2())[1])
         old_pose = self.current_position.as_SE2()
         for pose in seqs:
             if dist >= distance_to_travel:
                 break
-            # p_old, theta_old = geo.translation_angle_from_SE2(old_pose)
-            # p_pose, theta_pose = geo.translation_angle_from_SE2(pose)
-            dist += geo.SE2.distances(old_pose, pose)[1]
-            if (pose == path_nodes[0].as_SE2()).all():
+            p_old, theta_old = geo.translation_angle_from_SE2(old_pose)
+            p_pose, theta_pose = geo.translation_angle_from_SE2(pose)
+            dist += euclidean_distance(SE2Transform(p_old, theta_old), SE2Transform(p_pose, theta_pose))
+            # dist += geo.SE2.distances(old_pose, pose)[1]
+            if (np.isclose(path_nodes[0].as_SE2(), pose)).all():
                 #possible bug here, list index out of range sometimes
+                print("reached a control point here")
                 path_nodes.pop(0)
                 my_closest_control_point = self.current_path.pop(0)
                 self.my_closest_control_point = my_closest_control_point[0]
+                self.replan = True
             old_pose = pose
 
         p, theta = geo.translation_angle_from_SE2(old_pose)
@@ -162,7 +175,7 @@ class Duckie(object):
 
     def set_target_destination(self, destination_node):
         self.destination_node = destination_node
-        self.current_path = self.path_planner.get_shortest_path(self.current_position,
+        self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                 self.destination_node)
         return
 

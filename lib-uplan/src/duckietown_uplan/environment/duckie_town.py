@@ -50,10 +50,10 @@ class DuckieTown(object):
     def augment_graph(self):
         self.skeleton_graph = segmentify.get_skeleton_graph(self.original_map)  # to be changed accordig to Jose
         self.current_graph = GraphAugmenter.augment_graph(self.skeleton_graph.G,
-                                                          num_long=1,
-                                                          num_right=1,
-                                                          num_left=1,
-                                                          lat_dist=0.1)
+                                                          num_long=0,
+                                                          num_right=0,
+                                                          num_left=0,
+                                                          lat_dist=0)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):

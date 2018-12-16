@@ -26,14 +26,16 @@ class ConstantProbabiltiySim(object):
         import os
         import cv2
         import shutil
-        folder_path = './data'
+        folder_path = './working_dir'
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)
         os.mkdir(folder_path)
         video_name = 'simulation_vid.avi'
-        time_per_step = 1
+        time_per_step = 0.2
         num_of_steps = int(time_in_seconds / time_per_step)
         for i in range(num_of_steps):
             self.duckie_town.create_random_targets_for_all_duckies()
-            self.duckie_town.step(time_per_step, display=False, save=True, folder='./data', file_index=i)
+            self.duckie_town.step(time_per_step, display=False, save=True, folder='./working_dir', file_index=i)
 
         images = [img for img in os.listdir(folder_path) if img.endswith(".png")]
         images = sorted(images, key=lambda x: int(os.path.splitext(x)[0].split('file')[1]))
