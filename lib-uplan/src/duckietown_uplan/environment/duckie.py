@@ -10,6 +10,7 @@ from duckietown_uplan.environment.utils import move_point, euclidean_distance, \
     is_point_in_bounding_box, interpolate, get_closest_neighbor
 from duckietown_uplan.environment.constant import Constants as CONSTANTS
 from duckietown_uplan.algo.path_planning import PathPlanner
+from duckietown_uplan.algo.observations import ObservationModel
 import numpy as np
 
 
@@ -31,6 +32,7 @@ class Duckie(object):
         self.env_graph = None
         self.path_planner = None
         self.my_closest_control_point = None
+        self.observation_model = None
 
     def map_environment(self, graph, node_to_index, index_to_node, collision_matrix):
         #args need to be refactored
@@ -43,6 +45,7 @@ class Duckie(object):
                                         collision_matrix=collision_matrix
                                         )
         self.my_closest_control_point, _ = get_closest_neighbor(graph, self.current_position)
+        self.observation_model = ObservationModel(graph)
         return
 
     def move(self, time_in_seconds, replan=False):
@@ -265,4 +268,3 @@ class Duckie(object):
         observations = {}
         for node_name in self.current_observed_nodes:
             observations[node_name[0]] = 0
-

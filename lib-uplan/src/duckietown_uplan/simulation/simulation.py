@@ -6,7 +6,6 @@ __all__ = [
 ]
 from duckietown_uplan.environment.duckie_town import DuckieTown
 
-
 class ConstantProbabiltiySim(object):
     def __init__(self, current_map, number_of_duckies):
         self.duckie_town = DuckieTown(current_map)
