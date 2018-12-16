@@ -50,10 +50,10 @@ class DuckieTown(object):
     def augment_graph(self):
         self.skeleton_graph = segmentify.get_skeleton_graph(self.original_map)  # to be changed accordig to Jose
         self.current_graph = GraphAugmenter.augment_graph(self.skeleton_graph.G,
-                                                          num_long=0,
-                                                          num_right=0,
-                                                          num_left=0,
-                                                          lat_dist=0)
+                                                          num_long=1,
+                                                          num_right=1,
+                                                          num_left=1,
+                                                          lat_dist=0.1)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):
@@ -197,7 +197,6 @@ class DuckieTown(object):
             node_data = self.current_graph.nodes(data=True)[node_name]
             if is_point_in_bounding_box(node_data['point'], self.duckie_citizens[duckie_id].get_field_of_view()):
                 observed_nodes.append((node_name, node_data))
-        print('observed some nodes: ', observed_nodes)
         return observed_duckies, observed_nodes
 
     def issue_ticket(self, duckie_id):
