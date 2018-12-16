@@ -26,12 +26,12 @@ class ObservationModel(object):
     def get_uncertainty_from_node(self, node):
         return self.curr_uncertainty_values[node]
 
-    def update_obstacles_uncertainity(self):
+    def update_obstacles_uncertainity(self, current_observations):
         from duckietown_uplan.environment.duckie import Duckie
-        for key, value in Duckie.get_current_observations(): ## Returns a dict()
-            self.curr_uncertainty_values[key] = value
+        for key, value in current_observations.items(): ## Returns a dict()
+            self.curr_uncertainty_values[key] = value            
         for n in self.uncertainty_history:
-            if n in Duckie.get_current_observations():
+            if n in current_observations:
                 continue
             #reduce it if its higher than the initial obstacle prob and increase otherwise
             if self.curr_uncertainty_values[n] > initial_obstacle_prob:

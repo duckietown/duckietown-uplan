@@ -267,4 +267,5 @@ class Duckie(object):
     def get_current_observations(self):
         observations = {}
         for node_name in self.current_observed_nodes:
-            observations[node_name[0]] = 0
+            observations[node_name] = 0
+        return observations
