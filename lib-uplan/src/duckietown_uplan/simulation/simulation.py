@@ -14,6 +14,8 @@ class ConstantProbabiltiySim(object):
         self.duckie_town.spawn_random_duckie(number_of_duckies)
         self.duckie_town.get_duckie(0).set_visible_path(True)
         self.duckie_town.reset()
+        for i in range(1, len(self.duckie_town.get_duckie_citizens())):
+            self.duckie_town.get_duckie(i).stop_movement()
 
     def execute_simulation(self, time_in_seconds):
         time_per_step = 1

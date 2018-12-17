@@ -50,10 +50,10 @@ class DuckieTown(object):
     def augment_graph(self):
         self.skeleton_graph = segmentify.get_skeleton_graph(self.original_map)  # to be changed accordig to Jose
         self.current_graph = GraphAugmenter.augment_graph(self.skeleton_graph.G,
-                                                          num_long=4,
-                                                          num_right=0,
-                                                          num_left=0,
-                                                          lat_dist=0)
+                                                          num_long=0,
+                                                          num_right=1,
+                                                          num_left=1,
+                                                          lat_dist=0.2)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):
@@ -188,7 +188,7 @@ class DuckieTown(object):
         # get observed duckies
         observed_duckies = []
         for duckie in self.duckie_citizens:
-            if is_point_in_bounding_box(duckie.current_position, self.duckie_citizens[duckie_id].get_field_of_view()):
+            if duckie != self.duckie_citizens[duckie_id] and is_bounding_boxes_intersect(duckie.get_duckie_bounding_box(), self.duckie_citizens[duckie_id].get_field_of_view()):
                 observed_duckies.append(duckie)
         # get observed nodes
         observed_nodes = []
@@ -213,13 +213,14 @@ class DuckieTown(object):
 
     def step(self, time_in_seconds, display=False, save=False, folder='./data', file_index=0):
         for duckie in self.duckie_citizens:
-            duckie.move(time_in_seconds)
-            observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
-            foot_print = self.get_duckie_foot_print(duckie.id)
-            safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
-            duckie.set_current_frame(observed_duckies, observed_nodes)
-            duckie.set_foot_print(foot_print)
-            duckie.set_safe_foot_print(safe_foot_print)
+            if not duckie.is_stationary():
+                duckie.move(time_in_seconds)
+                observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
+                foot_print = self.get_duckie_foot_print(duckie.id)
+                safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
+                duckie.set_current_frame(observed_duckies, observed_nodes)
+                duckie.set_foot_print(foot_print)
+                duckie.set_safe_foot_print(safe_foot_print)
         self.update_blocked_nodes()
         if display or save:
             self.render_current_graph(display=display,

@@ -9,7 +9,7 @@ class Constants(object):
     aug_num_left = 2
     aug_dist = 0.05
     # duckiewidth
-    duckie_height = 0.05
-    duckie_width = 0.1
-    FOV_vertical = 0.35
+    duckie_height = 0.1
+    duckie_width = 0.2
+    FOV_vertical = 0.5
     FOV_horizontal = 0.2

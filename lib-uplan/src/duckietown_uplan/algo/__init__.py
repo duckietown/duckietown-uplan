@@ -2,4 +2,4 @@
 from .constants import *
 from .observations import *
 from .path_planning import *
-from .velocity_profiler import *
+from .velocity_profiling import *

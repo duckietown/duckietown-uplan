@@ -10,6 +10,7 @@ from duckietown_uplan.environment.utils import move_point, euclidean_distance, \
     is_point_in_bounding_box, interpolate, get_closest_neighbor
 from duckietown_uplan.environment.constant import Constants as CONSTANTS
 from duckietown_uplan.algo.path_planning import PathPlanner
+# from duckietown_uplan.algo.velocity_profiling import VelocityProfiler
 from duckietown_uplan.algo.observations import ObservationModel
 import numpy as np
 
@@ -22,6 +23,7 @@ class Duckie(object):
         self.current_position = position
         self.velocity = velocity #cm/s
         self.current_path = [] #stack
+        self.current_velocity_profile = []  # stack
         self.motor_off = False
         self.destination_node = None
         self.current_observed_nodes = None
@@ -31,6 +33,7 @@ class Duckie(object):
         self.has_visible_path = False
         self.env_graph = None
         self.path_planner = None
+        self.velocity_planner = None
         self.my_closest_control_point = None
         self.observation_model = None
         self.replan = False
@@ -45,6 +48,7 @@ class Duckie(object):
                                         index_to_node=index_to_node,
                                         collision_matrix=collision_matrix
                                         )
+        # self.velocity_profiler = VelocityProfiler(velocity_min=10, velocity_max=100, N=10)
         self.my_closest_control_point, _ = get_closest_neighbor(graph, self.current_position)
         self.observation_model = ObservationModel(graph)
         return
@@ -55,11 +59,12 @@ class Duckie(object):
         TODO: currently assuming that duckies are always on a path
         """
         print("Started move function")
+        self.observation_model.update_obstacles_uncertainity(self.get_current_observations())
 
         path_nodes = [path_node[1]['point'] for path_node in self.current_path]
         if len(self.current_path) > 0 and (self.current_position == path_nodes[0].as_SE2()).all():
-            print("reached a control point here pop initial")
             my_closest_control_point = self.current_path.pop(0)
+            self.current_velocity_profile.pop(0)
             self.my_closest_control_point = my_closest_control_point[0]
 
         if len(self.current_path) == 0:
@@ -70,7 +75,10 @@ class Duckie(object):
             print('replanning now')
             self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                     self.destination_node,
-                                                                    self.retrieve_observed_duckies_locs())
+                                                                    self.get_current_fov_occupancy())
+            # self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
+            #                                                                             self.current_path,
+            #                                                                             self.observation_model.get_path_uncertainities(self.current_path))
             path_nodes = [path_node[1]['point'] for path_node in self.current_path]
 
         if self.motor_off:
@@ -88,11 +96,11 @@ class Duckie(object):
             seqs.extend(sub_seq[1:])
             q0 = q1
 
+        # self.velocity = self.current_velocity_profile[0]
         distance_to_travel = self.velocity * time_in_seconds
+
         dist = 0
-        print("distance to travel: ", distance_to_travel)
-        print("distance to next control point is : ", geo.SE2.distances(self.current_position.as_SE2(),
-                                                                        path_nodes[0].as_SE2())[1])
+
         old_pose = self.current_position.as_SE2()
         for pose in seqs:
             if dist >= distance_to_travel:
@@ -103,9 +111,14 @@ class Duckie(object):
             # dist += geo.SE2.distances(old_pose, pose)[1]
             if (np.isclose(path_nodes[0].as_SE2(), pose)).all():
                 #possible bug here, list index out of range sometimes
-                print("reached a control point here")
                 path_nodes.pop(0)
                 my_closest_control_point = self.current_path.pop(0)
+                # self.current_velocity_profile.pop(0)
+                # if len(self.current_velocity_profile) > 0:
+                #     delta_t = time_in_seconds - (dist / self.velocity)
+                #     distance_to_travel = delta_t * self.current_velocity_profile[0]
+                #     dist = 0
+                #     self.velocity = self.current_velocity_profile[0]
                 self.my_closest_control_point = my_closest_control_point[0]
                 self.replan = True
             old_pose = pose
@@ -113,34 +126,6 @@ class Duckie(object):
         p, theta = geo.translation_angle_from_SE2(old_pose)
 
         self.current_position = SE2Transform(p, theta)
-
-        # distance_to_travel = self.velocity*time_in_seconds
-        # print("distance to travel", distance_to_travel)
-        # distance_travelled = 0
-        # moving_position = self.current_position
-        # while(distance_travelled < distance_to_travel):
-        #     #pick next control point
-        #     if len(self.current_path) == 0:
-        #         return
-        #     target_node = self.current_path[0]
-        #     #measure euclidean distance
-        #     distance_to_next_ctrl_pt = euclidean_distance(target_node, moving_position)
-        #     if distance_to_next_ctrl_pt <= (distance_to_travel - distance_travelled):
-        #         #pop the control point and go on next one
-        #         moving_position = target_node
-        #         distance_travelled = distance_travelled + distance_to_next_ctrl_pt
-        #         self.current_path.pop(0)
-        #         continue
-        #
-        #     else:
-        #         #go somewhere close to the next control point
-        #         moving_position = move_point(location_SE2=moving_position,
-        #                                      distance=distance_to_travel - distance_travelled,
-        #                                      theta=target_node.theta)
-        #         distance_travelled = distance_to_travel
-        # print('final_position', euclidean_distance(self.current_position, moving_position))
-        #
-        # self.current_position = moving_position
         return
 
     def get_current_positon(self):
@@ -173,10 +158,23 @@ class Duckie(object):
         self.current_path.extend(path)
         return
 
+    def get_current_fov_occupancy(self):
+        occupied_nodes = []
+        for duckie in self.current_observed_duckies:
+            #get duckie footprint and get the nodes that I can see
+            for duckie_foot_print_node in duckie.current_safe_foot_print:
+                if duckie_foot_print_node in self.current_observed_nodes:
+                    print("Duckies colliding yaaaay")
+                    occupied_nodes.append(duckie_foot_print_node[0])
+        return occupied_nodes
+
     def set_target_destination(self, destination_node):
         self.destination_node = destination_node
         self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                 self.destination_node)
+        # self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
+        #                                                                             self.current_path,
+        #                                                                             self.observation_model.get_path_uncertainities(self.current_path))
         return
 
     def stop_movement(self):
@@ -197,6 +195,8 @@ class Duckie(object):
 
     def set_current_frame(self, observed_duckies, observed_nodes):
         self.current_observed_duckies = observed_duckies
+        if len(self.current_observed_duckies):
+            self.replan = True
         self.current_observed_nodes = observed_nodes
         return
 
@@ -278,7 +278,11 @@ class Duckie(object):
         return bounding_box
 
     def get_current_observations(self):
+        fov_occupancy_nodes = self.get_current_fov_occupancy()
         observations = {}
-        for node_name in self.current_observed_nodes:
+        for node in self.current_observed_nodes:
+            node_name = node[0]
             observations[node_name] = 0
+        for node_name in fov_occupancy_nodes:
+            observations[node_name] = 1
         return observations
