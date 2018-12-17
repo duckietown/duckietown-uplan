@@ -35,8 +35,7 @@ class VelocityProfiler(object):
         self.vel_space = np.linspace(self.velocity_min, self.velocity_max, self.N)
         self.vel_ids = range(len(self.vel_space))
         self.path_ids = range(len(path))
-        uncertainties = self.get_toy_uncertainties(len(path))  # TODO erase this toy example
-        print("delta_v_norm" + str(uncertainties))
+        uncertainties = self.uncertainties # TODO erase this toy example
 
         for node in self.path_ids:
             for vel_id in self.vel_ids:
@@ -62,34 +61,23 @@ class VelocityProfiler(object):
                     #if abs(self.vel_ids[j] - self.vel_ids[k]) > 1:
                     #    delta_v_norm = np.Inf
 
-                    a1 = 8
-                    a2 = 0
-                    a3 = 8
-                    a4 = 0
-                    a5 = 10
-
                     next_vel_norm = (next_vel-self.velocity_min)/(self.velocity_max - self.velocity_min)
 
-                    # cost = self.get_cost(delta_v_norm=a1*delta_v_norm**3,
-                    #                      delta_unc=delta_unc,
-                    #                      unc=a3*next_vel_norm*uncertainties[i]**2,
-                    #                      vel=a4*next_vel_norm**2,
-                    #                      error=a5*error_norm**2)
+                    # Just for testing
+                    if cost_function is None:
+                        cost = self.cost_function(delta_v_norm=delta_v_norm,
+                                                  delta_unc=delta_unc,
+                                                  unc=next_vel_norm*uncertainties[i],
+                                                  next_vel_norm=next_vel_norm,
+                                                  error_norm=error_norm)
+                    else:
+                        cost = cost_function(delta_v_norm=delta_v_norm,
+                                             delta_unc=delta_unc,
+                                             unc=next_vel_norm*uncertainties[i],
+                                             next_vel_norm=next_vel_norm,
+                                             error_norm=error_norm)
 
-                    cost = cost_function(delta_v_norm=delta_v_norm,
-                                         delta_unc=delta_unc,
-                                         unc=next_vel_norm*uncertainties[i],
-                                         next_vel_norm=next_vel_norm,
-                                         error_norm=error_norm)
-
-                    self.vel_graph.add_edge(from_node, to_node,
-                                            cost=cost,
-                                            delta_v_norm=a1*delta_v_norm**2,
-                                            delta_unc=delta_unc,
-                                            unc=a3*uncertainties[i]**2,
-                                            vel=a4*((next_vel-self.velocity_min)/(self.velocity_max - self.velocity_min))**2,
-                                            error=a5*error_norm**2)
-
+                    self.vel_graph.add_edge(from_node, to_node, cost=cost)
         return self.vel_graph
 
     def get_astar_path(self, vel_start, vel_end):
@@ -134,8 +122,12 @@ class VelocityProfiler(object):
 
         return additive_cost, cost_array, additive_cost_array
 
-    def get_velocity_profile(self, vel_start, path, cost_function=lambda x: 0):
-        self.vel_graph = self.generate_velocity_graph(path, cost_function=cost_function)
+    def get_velocity_profile(self, vel_start, path, uncertainties, cost_function=None):
+
+        self.uncertainties = uncertainties
+        self.vel_graph = self.generate_velocity_graph(path,
+                                                      cost_function=cost_function)
+
         min_path, min_path_cost, self.path_history = self.get_min_path(vel_start)
 
         min_trajectory = self.get_trajectory_from_path(min_path)
@@ -149,27 +141,27 @@ class VelocityProfiler(object):
     def get_trajectory_from_path(self, path):
         return [self.vel_space[vel_id] for (pose_id, vel_id) in path]
 
-
-    @staticmethod
-    def get_cost(delta_v_norm=0, delta_unc=0.0, vel=0.0, error=0, unc=0):
-        return delta_v_norm + unc + vel + error
-
     def get_toy_uncertainties(self, num=10):
 
-        f = lambda x: 0.5 - 0.5*np.cos(x)
-        t = np.linspace(0, 4*np.pi, num)
+        f = lambda x: x**2
 
-        #f = lambda x: x**2
-        #t = np.linspace(0,1,num)
-        #y = [f(x) for x in t]
+        t = np.linspace(0, 1, num)
 
-        #first_list = np.linspace(0,1,np.ceil(num/2))
-        #rest = np.flip(first_list)
-        #final = np.concatenate((first_list, rest), axis=None)
-
-        #return np.random.rand(num)
         self.uncertainties = [f(x) for x in t]
         return self.uncertainties
+
+    @staticmethod
+    def cost_function(delta_v_norm=0, delta_unc=0, unc=0, next_vel_norm=0, error_norm=0):
+
+        a1 = 3
+        a2 = 0
+        a3 = 4
+        a4 = 0
+        a5 = 0.1
+
+        sum_of_terms = a1 * delta_v_norm ** 2 + a2 * delta_unc + a3 * unc ** 2 + \
+                       a4 * next_vel_norm ** 2 + a5 * error_norm ** 2
+        return sum_of_terms
 
 
 
