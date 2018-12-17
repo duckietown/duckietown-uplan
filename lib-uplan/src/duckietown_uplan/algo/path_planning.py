@@ -34,7 +34,7 @@ class PathPlanner(object):
     def _build_mod_graph(self, occupancy_vector):
         forbidden_vector = self.collision_matrix.dot(np.array(occupancy_vector))
         mod_graph = copy.deepcopy(self.graph)
-        for ni,node in  enumerate(mod_graph):
+        for ni,node in enumerate(mod_graph):
 
             if forbidden_vector[ni]!=0:
                 for node2 in mod_graph.predecessors(node):

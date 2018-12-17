@@ -10,6 +10,7 @@ __all__ = [
     'VelocityProfiler',
 ]
 
+
 class VelocityProfiler(object):
     def __init__(self, velocity_min, velocity_max, N):
         self.velocity_min = velocity_min
@@ -21,8 +22,15 @@ class VelocityProfiler(object):
         self.path_ids = None
         self.path_history = None
         self.trajectory_history = None
+        self.uncertainties = []
+        self.cost_array = []
+        self.additive_cost_array = []
 
-    def generate_velocity_graph(self, path):
+    def generate_velocity_graph(self, path, cost_function=None):
+
+        if cost_function is None:
+            raise ValueError("cost function needed")
+
         self.vel_graph = nx.DiGraph()
         self.vel_space = np.linspace(self.velocity_min, self.velocity_max, self.N)
         self.vel_ids = range(len(self.vel_space))
@@ -54,19 +62,25 @@ class VelocityProfiler(object):
                     #if abs(self.vel_ids[j] - self.vel_ids[k]) > 1:
                     #    delta_v_norm = np.Inf
 
-                    a1 = 30
-                    a2 = 1
-                    a3 = 80
-                    a4 = 1
+                    a1 = 8
+                    a2 = 0
+                    a3 = 8
+                    a4 = 0
                     a5 = 10
 
                     next_vel_norm = (next_vel-self.velocity_min)/(self.velocity_max - self.velocity_min)
 
-                    cost = self.get_cost(delta_v_norm=a1*delta_v_norm**2,
+                    # cost = self.get_cost(delta_v_norm=a1*delta_v_norm**3,
+                    #                      delta_unc=delta_unc,
+                    #                      unc=a3*next_vel_norm*uncertainties[i]**2,
+                    #                      vel=a4*next_vel_norm**2,
+                    #                      error=a5*error_norm**2)
+
+                    cost = cost_function(delta_v_norm=delta_v_norm,
                                          delta_unc=delta_unc,
-                                         unc=a3*next_vel_norm*uncertainties[i]**15,
-                                         vel=a4*next_vel_norm**2,
-                                         error=a5*error_norm**2)
+                                         unc=next_vel_norm*uncertainties[i],
+                                         next_vel_norm=next_vel_norm,
+                                         error_norm=error_norm)
 
                     self.vel_graph.add_edge(from_node, to_node,
                                             cost=cost,
@@ -92,27 +106,36 @@ class VelocityProfiler(object):
         min_path_cost = np.Inf
         min_path = []
         path_history = []
+        self.cost_array = []
+        self.additive_cost_array = []
         for end_vel_id in self.vel_ids:
             path = self.get_astar_path(vel_start, self.vel_space[end_vel_id])
-            path_cost = self.get_path_cost(path)
+            path_cost, cost_array, additive_cost_array = self.get_path_cost(path)
             path_history.append((path_cost, path))
 
             if path_cost < min_path_cost:
                 min_path_cost = path_cost
                 min_path = path
+                self.cost_array = cost_array
+                self.additive_cost_array = additive_cost_array
 
         if min_path == np.Inf:
             raise ValueError("No feasable velocity path")
         return min_path, min_path_cost, path_history
 
     def get_path_cost(self, path):
-        cost = 0
+        additive_cost = 0
+        cost_array = []
+        additive_cost_array = []
         for k, node in enumerate(path[:-1]):
-            cost += self.vel_graph[path[k]][path[k+1]]["cost"]
-        return cost
+            additive_cost_array.append(additive_cost)
+            cost_array.append(self.vel_graph[path[k]][path[k+1]]["cost"])
+            additive_cost += cost_array[-1]
 
-    def get_velocity_profile(self, vel_start, path):
-        self.vel_graph = self.generate_velocity_graph(path)
+        return additive_cost, cost_array, additive_cost_array
+
+    def get_velocity_profile(self, vel_start, path, cost_function=lambda x: 0):
+        self.vel_graph = self.generate_velocity_graph(path, cost_function=cost_function)
         min_path, min_path_cost, self.path_history = self.get_min_path(vel_start)
 
         min_trajectory = self.get_trajectory_from_path(min_path)
@@ -131,8 +154,10 @@ class VelocityProfiler(object):
     def get_cost(delta_v_norm=0, delta_unc=0.0, vel=0.0, error=0, unc=0):
         return delta_v_norm + unc + vel + error
 
-    @staticmethod
-    def get_toy_uncertainties(num=10):
+    def get_toy_uncertainties(self, num=10):
+
+        f = lambda x: 0.5 - 0.5*np.cos(x)
+        t = np.linspace(0, 4*np.pi, num)
 
         #f = lambda x: x**2
         #t = np.linspace(0,1,num)
@@ -142,7 +167,9 @@ class VelocityProfiler(object):
         #rest = np.flip(first_list)
         #final = np.concatenate((first_list, rest), axis=None)
 
-        return np.random.rand(num)
+        #return np.random.rand(num)
+        self.uncertainties = [f(x) for x in t]
+        return self.uncertainties
 
 
 
