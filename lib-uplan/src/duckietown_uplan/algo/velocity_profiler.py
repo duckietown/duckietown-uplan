@@ -67,13 +67,13 @@ class VelocityProfiler(object):
                     if cost_function is None:
                         cost = self.cost_function(delta_v_norm=delta_v_norm,
                                                   delta_unc=delta_unc,
-                                                  unc=next_vel_norm*uncertainties[i],
+                                                  unc=next_vel_norm*uncertainties[i+1],
                                                   next_vel_norm=next_vel_norm,
                                                   error_norm=error_norm)
                     else:
                         cost = cost_function(delta_v_norm=delta_v_norm,
                                              delta_unc=delta_unc,
-                                             unc=next_vel_norm*uncertainties[i],
+                                             unc=next_vel_norm*uncertainties[i+1],
                                              next_vel_norm=next_vel_norm,
                                              error_norm=error_norm)
 
