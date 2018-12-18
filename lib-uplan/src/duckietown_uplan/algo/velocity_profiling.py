@@ -3,7 +3,6 @@ This class is supposed to take care of everything for getting the velocity profi
 """
 import networkx as nx
 import numpy as np
-from duckietown_uplan.environment.footprint_table import FootprintTable
 
 
 __all__ = [
@@ -27,9 +26,6 @@ class VelocityProfiler(object):
         self.additive_cost_array = []
 
     def generate_velocity_graph(self, path, cost_function=None):
-
-        if cost_function is None:
-            raise ValueError("cost function needed")
 
         self.vel_graph = nx.DiGraph()
         self.vel_space = np.linspace(self.velocity_min, self.velocity_max, self.N)
@@ -122,12 +118,18 @@ class VelocityProfiler(object):
 
         return additive_cost, cost_array, additive_cost_array
 
-    def get_velocity_profile(self, vel_start, path, uncertainties, cost_function=None):
+    def get_velocity_profile(self, vel_start, old_path, uncertainties, cost_function=None):
 
-        self.uncertainties = uncertainties
+        if len(old_path) == 0:
+            return []
+
+        path = list(old_path)
+        path.insert(0, (-1, {'dist': 0}))
+        self.uncertainties = [0,] + list(uncertainties)
         self.vel_graph = self.generate_velocity_graph(path,
                                                       cost_function=cost_function)
-
+        if len(path) == 1:
+            print("DEBIUUUUG")
         min_path, min_path_cost, self.path_history = self.get_min_path(vel_start)
 
         min_trajectory = self.get_trajectory_from_path(min_path)

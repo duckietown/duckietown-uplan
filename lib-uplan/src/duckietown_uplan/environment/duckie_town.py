@@ -52,8 +52,8 @@ class DuckieTown(object):
         self.current_graph = GraphAugmenter.augment_graph(self.skeleton_graph.G,
                                                           num_long=0,
                                                           num_right=1,
-                                                          num_left=1,
-                                                          lat_dist=0.2)
+                                                          num_left=0,
+                                                          lat_dist=0.8)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):

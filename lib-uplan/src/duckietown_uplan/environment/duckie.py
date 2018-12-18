@@ -10,7 +10,7 @@ from duckietown_uplan.environment.utils import move_point, euclidean_distance, \
     is_point_in_bounding_box, interpolate, get_closest_neighbor
 from duckietown_uplan.environment.constant import Constants as CONSTANTS
 from duckietown_uplan.algo.path_planning import PathPlanner
-# from duckietown_uplan.algo.velocity_profiling import VelocityProfiler
+from duckietown_uplan.algo.velocity_profiling import VelocityProfiler
 from duckietown_uplan.algo.observations import ObservationModel
 import numpy as np
 
@@ -33,7 +33,7 @@ class Duckie(object):
         self.has_visible_path = False
         self.env_graph = None
         self.path_planner = None
-        self.velocity_planner = None
+        self.velocity_profiler = None
         self.my_closest_control_point = None
         self.observation_model = None
         self.replan = False
@@ -48,7 +48,7 @@ class Duckie(object):
                                         index_to_node=index_to_node,
                                         collision_matrix=collision_matrix
                                         )
-        # self.velocity_profiler = VelocityProfiler(velocity_min=10, velocity_max=100, N=10)
+        self.velocity_profiler = VelocityProfiler(velocity_min=0.1, velocity_max=0.7, N=10)
         self.my_closest_control_point, _ = get_closest_neighbor(graph, self.current_position)
         self.observation_model = ObservationModel(graph)
         return
@@ -76,9 +76,9 @@ class Duckie(object):
             self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                     self.destination_node,
                                                                     self.get_current_fov_occupancy())
-            # self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
-            #                                                                             self.current_path,
-            #                                                                             self.observation_model.get_path_uncertainities(self.current_path))
+            self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
+                                                                                        self.current_path,
+                                                                                        self.observation_model.get_path_uncertainities(self.current_path))
             path_nodes = [path_node[1]['point'] for path_node in self.current_path]
 
         if self.motor_off:
@@ -96,7 +96,7 @@ class Duckie(object):
             seqs.extend(sub_seq[1:])
             q0 = q1
 
-        # self.velocity = self.current_velocity_profile[0]
+        self.velocity = self.current_velocity_profile[0]
         distance_to_travel = self.velocity * time_in_seconds
 
         dist = 0
@@ -113,12 +113,12 @@ class Duckie(object):
                 #possible bug here, list index out of range sometimes
                 path_nodes.pop(0)
                 my_closest_control_point = self.current_path.pop(0)
-                # self.current_velocity_profile.pop(0)
-                # if len(self.current_velocity_profile) > 0:
-                #     delta_t = time_in_seconds - (dist / self.velocity)
-                #     distance_to_travel = delta_t * self.current_velocity_profile[0]
-                #     dist = 0
-                #     self.velocity = self.current_velocity_profile[0]
+                self.current_velocity_profile.pop(0)
+                if len(self.current_velocity_profile) > 0:
+                    delta_t = time_in_seconds - (dist / self.velocity)
+                    distance_to_travel = delta_t * self.current_velocity_profile[0]
+                    dist = 0
+                    self.velocity = self.current_velocity_profile[0]
                 self.my_closest_control_point = my_closest_control_point[0]
                 self.replan = True
             old_pose = pose
@@ -172,9 +172,9 @@ class Duckie(object):
         self.destination_node = destination_node
         self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                 self.destination_node)
-        # self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
-        #                                                                             self.current_path,
-        #                                                                             self.observation_model.get_path_uncertainities(self.current_path))
+        self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
+                                                                                    self.current_path,
+                                                                                    self.observation_model.get_path_uncertainities(self.current_path))
         return
 
     def stop_movement(self):
