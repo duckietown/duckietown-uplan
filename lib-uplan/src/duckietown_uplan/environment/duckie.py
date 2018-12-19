@@ -99,8 +99,27 @@ class Duckie(object):
             q0_se2 = SE2Transform(q0_se2_pos, q0_se2_theta)
             if q0_se2.theta == q1_se2.theta and q0_se2.p[0] != q1_se2.p[0] and q0_se2.p[1] != q1_se2.p[1]:
                 # q0_se2.theta = q0_se2.theta - np.arctan2(q0_se2.p[1] - q1_se2.p[1], q0_se2.p[0] - q1_se2.p[0])
+                # additional cp
+                q1_from_q0 = geo.SE2.multiply(geo.SE2.inverse(q0), q1)
+                p1_from_p0, _ = geo.translation_angle_from_SE2(q1_from_q0)
+                q_int = geo.SE2_from_translation_angle((q0_se2_pos+q1_se2_pos)/2,
+                                                       q0_se2_theta+np.pi/2 if p1_from_p0[1] > 0
+                                                       else q0_se2_theta+3*np.pi/2)
                 q0_se2.theta = q0_se2.theta
                 q0 = q0_se2.as_SE2()
+                sub_seq = []
+                for alpha in steps:
+                    q = interpolate(q0, q_int, alpha)
+                    sub_seq.append(q)
+                seqs.extend(sub_seq[1:])
+                sub_seq = []
+                for alpha in steps:
+                    q = interpolate(q_int, q1, alpha)
+                    sub_seq.append(q)
+                seqs.extend(sub_seq[1:])
+                q0 = q1
+                continue
+
             sub_seq = []
             for alpha in steps:
                 q = interpolate(q0, q1, alpha)
