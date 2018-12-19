@@ -56,7 +56,7 @@ class DuckieTown(object):
                                                           num_long=0,
                                                           num_right=0,
                                                           num_left=0,
-                                                          lat_dist=0.05)
+                                                          lat_dist=0)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):

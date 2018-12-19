@@ -13,6 +13,7 @@ from duckietown_uplan.algo.path_planning import PathPlanner
 from duckietown_uplan.algo.velocity_profiling import VelocityProfiler
 from duckietown_uplan.algo.observations import ObservationModel
 import numpy as np
+import collections
 
 
 class Duckie(object):
@@ -37,6 +38,7 @@ class Duckie(object):
         self.my_closest_control_point = None
         self.observation_model = None
         self.replan = False
+        self.occupancy_vector = collections.deque(maxlen=10)
 
     def map_environment(self, graph, node_to_index, index_to_node, collision_matrix):
         #args need to be refactored
@@ -75,11 +77,13 @@ class Duckie(object):
             print('replanning now')
             self.current_path = self.path_planner.get_shortest_path(self.my_closest_control_point,
                                                                     self.destination_node,
-                                                                    self.get_current_fov_occupancy())
+                                                                    self.get_fov_occupancy())
             self.current_velocity_profile = self.velocity_profiler.get_velocity_profile(self.velocity,
                                                                                         self.current_path,
                                                                                         self.observation_model.get_path_uncertainities(self.current_path))
             path_nodes = [path_node[1]['point'] for path_node in self.current_path]
+            if len(self.current_path) == 0:
+                return
 
         if self.motor_off:
             return
@@ -94,7 +98,8 @@ class Duckie(object):
             q0_se2_pos, q0_se2_theta = geo.translation_angle_from_SE2(q0)
             q0_se2 = SE2Transform(q0_se2_pos, q0_se2_theta)
             if q0_se2.theta == q1_se2.theta and q0_se2.p[0] != q1_se2.p[0] and q0_se2.p[1] != q1_se2.p[1]:
-                q0_se2.theta = q0_se2.theta - np.arctan2(q0_se2.p[1] - q1_se2.p[1], q0_se2.p[0] - q1_se2.p[0])
+                # q0_se2.theta = q0_se2.theta - np.arctan2(q0_se2.p[1] - q1_se2.p[1], q0_se2.p[0] - q1_se2.p[0])
+                q0_se2.theta = q0_se2.theta
                 q0 = q0_se2.as_SE2()
             sub_seq = []
             for alpha in steps:
@@ -174,6 +179,13 @@ class Duckie(object):
                     print("Duckies colliding yaaaay")
                     occupied_nodes.append(duckie_foot_print_node[0])
         return occupied_nodes
+
+    def get_fov_occupancy(self):
+        curren_fov_occupancy = self.get_current_fov_occupancy()
+        self.occupancy_vector.append(curren_fov_occupancy)
+        if len(curren_fov_occupancy) > 0:
+            print("debug")
+        return [item for sublist in self.occupancy_vector for item in sublist]
 
     def get_current_fov_occupancy_graph(self):
         occupied_nodes = []

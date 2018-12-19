@@ -37,9 +37,16 @@ class PathPlanner(object):
         for node_idx in range(len(forbidden_vector)):
             if forbidden_vector[node_idx] != 0:
                 #HIGE BUG WAS HERE!!
-                for predecessor_node in mod_graph.predecessors(self.index_to_node[node_idx]):
-                    mod_graph[predecessor_node][self.index_to_node[node_idx]][0]['dist'] = np.Inf
-                    mod_graph[predecessor_node][self.index_to_node[node_idx]][1]['dist'] = np.Inf
+                forbidden_node_predecessors = list(mod_graph.predecessors(self.index_to_node[node_idx]))
+                for predecessor_node in forbidden_node_predecessors:
+                    #remove edge between the two nodes at all
+                    # mod_graph[predecessor_node][self.index_to_node[node_idx]][0]['dist'] = np.Inf
+                    if len(mod_graph[predecessor_node][self.index_to_node[node_idx]]) > 1:
+                        mod_graph.remove_edge(predecessor_node, self.index_to_node[node_idx])
+                        mod_graph.remove_edge(predecessor_node, self.index_to_node[node_idx])
+                    else:
+                        mod_graph.remove_edge(predecessor_node, self.index_to_node[node_idx])
+                        # mod_graph[predecessor_node][self.index_to_node[node_idx]][1]['dist'] = np.Inf
                 # for successor_node in mod_graph.successors(self.index_to_node[node_idx]):
                 #     mod_graph[self.index_to_node[node_idx]][successor_node][0]['dist'] = np.Inf
                 #     mod_graph[self.index_to_node[node_idx]][successor_node][0]['dist'] = np.Inf
@@ -66,9 +73,13 @@ class PathPlanner(object):
             occupancy_vector[self.node_to_index[occupied_node_name]] = 1
         #create occupancy_vector
         mod_graph = self._build_mod_graph(occupancy_vector)
-        path_node_names = nx.shortest_path(mod_graph, start, end, weight='dist')
-        path_nodes = [(path_node_name, self.graph.nodes(data=True)[path_node_name])
-                       for path_node_name in path_node_names]
+        try:
+            path_node_names = nx.shortest_path(mod_graph, start, end, weight='dist')
+            path_nodes = [(path_node_name, self.graph.nodes(data=True)[path_node_name])
+                           for path_node_name in path_node_names]
+        except nx.exception.NetworkXNoPath:
+            return []
+        #getting the cost of the path node and check if any of the nodes has infinity then return and empty path
+
         path_nodes = path_nodes[1:]
         return path_nodes
-

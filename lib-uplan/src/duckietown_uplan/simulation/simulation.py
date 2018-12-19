@@ -18,7 +18,7 @@ class ConstantProbabiltiySim(object):
             self.duckie_town.get_duckie(i).stop_movement()
 
     def execute_simulation(self, time_in_seconds):
-        time_per_step = 1
+        time_per_step = 0.2
         num_of_steps = int(time_in_seconds / time_per_step)
         for i in range(num_of_steps):
             self.duckie_town.create_random_targets_for_all_duckies()
