@@ -97,7 +97,7 @@ class Duckie(object):
             q1_se2 = SE2Transform(q1_se2_pos, q1_se2_theta)
             q0_se2_pos, q0_se2_theta = geo.translation_angle_from_SE2(q0)
             q0_se2 = SE2Transform(q0_se2_pos, q0_se2_theta)
-            if q0_se2.theta == q1_se2.theta and q0_se2.p[0] != q1_se2.p[0] and q0_se2.p[1] != q1_se2.p[1]:
+            if np.abs(q0_se2.theta - q1_se2.theta) < np.pi/16 and q0_se2.p[0] != q1_se2.p[0] and q0_se2.p[1] != q1_se2.p[1]:
                 # q0_se2.theta = q0_se2.theta - np.arctan2(q0_se2.p[1] - q1_se2.p[1], q0_se2.p[0] - q1_se2.p[0])
                 # additional cp
                 q1_from_q0 = geo.SE2.multiply(geo.SE2.inverse(q0), q1)
