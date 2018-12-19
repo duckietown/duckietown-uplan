@@ -4,9 +4,10 @@ import tf
 import math
 import random
 import geometry_msgs.msg
+from colour import Color
+red = Color("red")
 
-from std_msgs.msg import String
-from std_msgs.msg import Float64
+from std_msgs.msg import ColorRGBA
 from uplan_visualization.msg import duckieData
 from uplan_visualization.msg import duckieStruct
 
@@ -17,7 +18,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 duckieMsg = duckieData()
 duckieVec = duckieStruct()
-traj = geometry_msgs.msg.Pose2D()
+
+thresholdVelocity = 25 #TODO: Move this to duckie.py
 
 """
 # Example
@@ -32,51 +34,55 @@ pub = rospy.Publisher('trajectory_markers', MarkerArray, queue_size=10)
 
 def pub_markers(msg):
     #rospy.loginfo(msg)
-    duckieVec = duckieStruct()
     marker_array = MarkerArray()
+    duckieVec = duckieStruct()
     duckieVec = msg.duckie_data
     id = 0
     for d in range(len(duckieVec)):
         #rospy.loginfo(duckieVec[d].label)
+        marker = Marker()
+
+        marker.header.frame_id = "/duckiebot_link" #TODO: Change
+        marker.id = id  #TODO: Change
+        marker.ns = "trajectory"
+        id = id+1
+        marker.type = marker.LINE_STRIP
+        marker.action = marker.ADD
+
+        marker.scale.x = 0.1
+        marker.scale.y = 0.1
+        marker.scale.z = 0.1
+
+        marker.pose.orientation.w = 1.0
+
         trajVec = duckieVec[d].SE2points
-        print("lenght")
-        print(len(trajVec))
-        for t in range(len(trajVec)):
-            marker = Marker()
+        velocityVec = duckieVec[d].value
 
-            marker.header.frame_id = "/duckiebot_link" #TODO: Change
-            marker.id = id  #TODO: Change
-            marker.ns = "trajectory"
-            id = id+1
-            marker.type = marker.ARROW
-            marker.action = marker.ADD
+        """
+        # Color profile:
+        v_min = duckie.velocity_profiler.velocity_min
+        v_max = duckie.velocity_profiler.velocity_max
+        steps = duckie.velocity_profiler.N
+        """
+        if len(trajVec) != 0:
+            clrList = list(red.range_to(Color("blue"),len(velocityVec)))
+            vel_sort = list(duckieVec[d].value)
+            vel_sort.sort(reverse = True)
+            for t in range(1,len(trajVec)):                
+                pt = geometry_msgs.msg.Point()
+                pt.x = trajVec[t].x
+                pt.y = trajVec[t].y
+                pt.z = 0
+                marker.points.append(pt)
+                cl = ColorRGBA()
+                cl.a = 1.0 # Don't forget to set the alpha!
+                clrList = list(red.range_to(Color("blue"),len(velocityVec)))
+                cl.r = clrList[vel_sort.index(velocityVec[t-1])].red
+                cl.g = clrList[vel_sort.index(velocityVec[t-1])].green
+                cl.b = clrList[vel_sort.index(velocityVec[t-1])].blue
+                marker.colors.append(cl)
 
-            marker.pose.position.x = trajVec[t].x
-            marker.pose.position.y = trajVec[t].y
-            marker.pose.position.z = 0
-
-            marker.scale.x = 0.1
-            marker.scale.y = 0.1
-            marker.scale.z = 0.1
-
-            marker.pose.orientation.x = trajVec[t].theta
-            marker.pose.orientation.y = 0
-            marker.pose.orientation.z = 0
-            marker.pose.orientation.w = 0
-
-            marker.color.a = 1.0 # Don't forget to set the alpha!
-            marker.color.r = 0.0
-            marker.color.g = 1.0
-            marker.color.b = 0.0
-
-            """
-            # # TODO: Convert to Quaternions from Euler
-            marker.pose.orientation.x = traj[t][3]
-            marker.pose.orientation.y = traj[t][4]
-            marker.pose.orientation.z = traj[t][5]
-            marker.pose.orientation.w = traj[t][6]
-            """
-            marker_array.markers.append(marker)
+        marker_array.markers.append(marker)
 
     pub.publish(marker_array)
     return

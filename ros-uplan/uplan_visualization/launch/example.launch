@@ -20,7 +20,7 @@
 
     <include
     file="$(find duckietown_visualization)/launch/publish_map.launch">
-        <arg name="map_name" value="robotarium1"/>
+        <arg name="map_name" value="4way"/>
         <arg name="rviz_config"
             value="$(find visualization_example)/config/myconfig.rviz"/>
     </include>
