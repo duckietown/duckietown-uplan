@@ -11,10 +11,13 @@ import geometry as geo
 from duckietown_uplan.environment.duckie import Duckie
 from duckietown_uplan.environment.constant import Constants as CONSTANTS
 from duckietown_uplan.environment.utils import draw_graphs, create_graph_from_polygon, \
-    is_point_in_bounding_box, create_graph_from_path, get_closest_neighbor, is_bounding_boxes_intersect
+    is_point_in_bounding_box, create_graph_from_path, get_closest_neighbor, is_bounding_boxes_intersect, \
+    create_graph_from_nodes
 from random import randint
 from duckietown_uplan.environment.footprint_table import FootprintTable
+from duckietown_world.geo.transforms import SE2Transform
 import numpy as np
+import time
 
 
 class DuckieTown(object):
@@ -51,9 +54,9 @@ class DuckieTown(object):
         self.skeleton_graph = segmentify.get_skeleton_graph(self.original_map)  # to be changed accordig to Jose
         self.current_graph = GraphAugmenter.augment_graph(self.skeleton_graph.G,
                                                           num_long=0,
-                                                          num_right=1,
+                                                          num_right=0,
                                                           num_left=0,
-                                                          lat_dist=0.8)
+                                                          lat_dist=0.05)
         self.node_to_index = {}
         self.index_to_node = {}
         for i, name in enumerate(self.current_graph):
@@ -97,6 +100,15 @@ class DuckieTown(object):
                 final_graphs.append(create_graph_from_path(duckie.get_path_SE2()))
                 node_colors.append('red')
                 edge_colors.append('red')
+        #draw blocked nodes
+        final_graphs.append(create_graph_from_nodes(self.draw_blocked_nodes()))
+        node_colors.append('purple')
+        edge_colors.append('purple')
+        for duckie in self.duckie_citizens:
+            if duckie.has_visible_path:
+                final_graphs.append(create_graph_from_nodes(duckie.get_current_fov_occupancy_graph()))
+                node_colors.append('green')
+                edge_colors.append('green')
         draw_graphs(final_graphs, with_labels=False, node_colors=node_colors,
                     edge_colors=edge_colors, save=save, folder=folder, file_index=file_index,
                     display=display)
@@ -211,16 +223,38 @@ class DuckieTown(object):
             self.current_occupied_nodes.extend(self.get_duckie_safe_foot_print(duckie.id))
         return
 
+    def draw_blocked_nodes(self):
+        nodes_SE2 = [occupied_node[1]['point'] for occupied_node in self.current_occupied_nodes]
+        print('current occupied nodes are ', nodes_SE2)
+        return nodes_SE2
+
     def step(self, time_in_seconds, display=False, save=False, folder='./data', file_index=0):
         for duckie in self.duckie_citizens:
             if not duckie.is_stationary():
+                time1 = time.time()
+                if duckie.replan:
+                    print("debug here")
                 duckie.move(time_in_seconds)
+                time2 = time.time()
+                print("move func ", time2-time1)
                 observed_duckies, observed_nodes = self.get_duckie_current_frame(duckie.id)
+                time3 = time.time()
+                print("get frame", time3 - time2)
                 foot_print = self.get_duckie_foot_print(duckie.id)
+                time4 = time.time()
+                print("get_duckie_foot_print", time4 - time3)
                 safe_foot_print = self.get_duckie_safe_foot_print(duckie.id)
+                time5 = time.time()
+                print("get_duckie_safe_foot_print", time5 - time4)
                 duckie.set_current_frame(observed_duckies, observed_nodes)
+                time6 = time.time()
+                print("set_current_frame", time6 - time5)
                 duckie.set_foot_print(foot_print)
+                time7 = time.time()
+                print("set_foot_print", time7 - time6)
                 duckie.set_safe_foot_print(safe_foot_print)
+                time8 = time.time()
+                print("set_safe_foot_print", time8 - time7)
         self.update_blocked_nodes()
         if display or save:
             self.render_current_graph(display=display,
@@ -255,40 +289,54 @@ class DuckieTown(object):
     def _build_collision_matrix(self):
         from shapely.geometry.polygon import Polygon
 
-        def local_to_global(poly_points, q):
-            global_points = []
-            for points in poly_points:
-                q_point = geo.SE2_from_translation_angle(points, 0.0)
-                global_point, _ = geo.translation_angle_from_SE2(geo.SE2.multiply(q, q_point))
-                global_points.append(global_point)
+        def get_bounding_box(center_point):
+            # BB ll, lr, ul, ur
+            bounding_box = []
+            # lower_right
+            relative_transform = geo.SE2_from_translation_angle([-CONSTANTS.duckie_width / 2, -CONSTANTS.duckie_height / 2], 0)
+            transform = geo.SE2.multiply(center_point.as_SE2(), relative_transform)
+            bounding_box.append(SE2Transform.from_SE2(transform))
+            # lower_left
+            relative_transform = geo.SE2_from_translation_angle([CONSTANTS.duckie_width / 2, -CONSTANTS.duckie_height / 2], 0)
+            transform = geo.SE2.multiply(center_point.as_SE2(), relative_transform)
+            bounding_box.append(SE2Transform.from_SE2(transform))
+            # upper left
+            relative_transform = geo.SE2_from_translation_angle([CONSTANTS.duckie_width / 2, CONSTANTS.duckie_height / 2], 0)
+            transform = geo.SE2.multiply(center_point.as_SE2(), relative_transform)
+            bounding_box.append(SE2Transform.from_SE2(transform))
+            # upper right
+            relative_transform = geo.SE2_from_translation_angle([-CONSTANTS.duckie_width / 2, CONSTANTS.duckie_height / 2], 0)
+            transform = geo.SE2.multiply(center_point.as_SE2(), relative_transform)
+            bounding_box.append(SE2Transform.from_SE2(transform))
 
-            return global_points
+            return bounding_box
+
+        # def local_to_global(poly_points, q):
+        #     global_points = []
+        #     for points in poly_points:
+        #         q_point = geo.SE2_from_translation_angle(points, 0.0)
+        #         global_point, _ = geo.translation_angle_from_SE2(geo.SE2.multiply(q, q_point))
+        #         global_points.append(global_point)
+        #
+        #     return global_points
 
         def overlap(q1, q2):
-            poly_points = ([((CONSTANTS.duckie_height / 2.0), (-CONSTANTS.duckie_width / 2.0)),
-                            ((CONSTANTS.duckie_height / 2.0), (CONSTANTS.duckie_width / 2.0)),
-                            ((-CONSTANTS.duckie_height / 2.0), (CONSTANTS.duckie_width / 2.0)),
-                            ((-CONSTANTS.duckie_height / 2.0), (-CONSTANTS.duckie_width / 2.0))])
-
-            poly1 = Polygon(local_to_global(poly_points, q1))
-            poly2 = Polygon(local_to_global(poly_points, q2))
-
-            return 1 if poly1.intersects(poly2) else 0
+            # poly_points = ([((CONSTANTS.duckie_height / 2.0), (-CONSTANTS.duckie_width / 2.0)),
+            #                 ((CONSTANTS.duckie_height / 2.0), (CONSTANTS.duckie_width / 2.0)),
+            #                 ((-CONSTANTS.duckie_height / 2.0), (CONSTANTS.duckie_width / 2.0)),
+            #                 ((-CONSTANTS.duckie_height / 2.0), (-CONSTANTS.duckie_width / 2.0))])
+            return 1 if is_bounding_boxes_intersect(get_bounding_box(q1), get_bounding_box(q2)) else 0
 
         num_nodes = len(self.current_graph)
         collision_matrix = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
 
         for i in range(num_nodes):
-            curr = self.current_graph.nodes[self.index_to_node[i]]['point'].as_SE2()
-            for j in range(num_nodes):
-                if i < j:
-                    break
-                elif i == j:
-                    collision_matrix[i][j] = 1
-                else:
-                    q = self.current_graph.nodes[self.index_to_node[j]]['point'].as_SE2()
-                    collision = overlap(curr, q)
-                    collision_matrix[i][j] = collision
-                    collision_matrix[j][i] = collision
+            curr = self.current_graph.nodes[self.index_to_node[i]]['point']
+            collision_matrix[i][i] = 1
+            for j in range(i+1, num_nodes):
+                q = self.current_graph.nodes[self.index_to_node[j]]['point']
+                collision = overlap(curr, q)
+                collision_matrix[i][j] = collision
+                collision_matrix[j][i] = collision
 
         return np.array(collision_matrix)

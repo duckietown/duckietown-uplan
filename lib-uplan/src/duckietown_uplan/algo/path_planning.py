@@ -35,10 +35,14 @@ class PathPlanner(object):
         forbidden_vector = self.collision_matrix.dot(np.array(occupancy_vector))
         mod_graph = copy.deepcopy(self.graph)
         for node_idx in range(len(forbidden_vector)):
-        # for node_name in nx.predecessor(mod_graph, ):
             if forbidden_vector[node_idx] != 0:
+                #HIGE BUG WAS HERE!!
                 for predecessor_node in mod_graph.predecessors(self.index_to_node[node_idx]):
                     mod_graph[predecessor_node][self.index_to_node[node_idx]][0]['dist'] = np.Inf
+                    mod_graph[predecessor_node][self.index_to_node[node_idx]][1]['dist'] = np.Inf
+                # for successor_node in mod_graph.successors(self.index_to_node[node_idx]):
+                #     mod_graph[self.index_to_node[node_idx]][successor_node][0]['dist'] = np.Inf
+                #     mod_graph[self.index_to_node[node_idx]][successor_node][0]['dist'] = np.Inf
         return mod_graph
 
     def get_shortest_path(self, start, end, occupancy_node_names=[]):
@@ -54,7 +58,10 @@ class PathPlanner(object):
         # print(occupancy_node_locs)
 
         #occupancy nodes should take care of the footprint of the duckie
+        if len(occupancy_node_names) > 0:
+            print('hello')
         occupancy_vector = [0] * len(self.index_to_node)
+
         for occupied_node_name in occupancy_node_names:
             occupancy_vector[self.node_to_index[occupied_node_name]] = 1
         #create occupancy_vector

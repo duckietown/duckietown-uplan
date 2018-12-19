@@ -11,5 +11,5 @@ class Constants(object):
     # duckiewidth
     duckie_height = 0.1
     duckie_width = 0.2
-    FOV_vertical = 0.5
-    FOV_horizontal = 0.2
+    FOV_vertical = 1.2
+    FOV_horizontal = 0.35

@@ -89,6 +89,13 @@ class Duckie(object):
         seqs = []
         for cp in path_nodes:
             q1 = cp.as_SE2()
+            q1_se2_pos, q1_se2_theta = geo.translation_angle_from_SE2(q1)
+            q1_se2 = SE2Transform(q1_se2_pos, q1_se2_theta)
+            q0_se2_pos, q0_se2_theta = geo.translation_angle_from_SE2(q0)
+            q0_se2 = SE2Transform(q0_se2_pos, q0_se2_theta)
+            if q0_se2.theta == q1_se2.theta and q0_se2.p[0] != q1_se2.p[0] and q0_se2.p[1] != q1_se2.p[1]:
+                q0_se2.theta = q0_se2.theta - np.arctan2(q0_se2.p[1] - q1_se2.p[1], q0_se2.p[0] - q1_se2.p[0])
+                q0 = q0_se2.as_SE2()
             sub_seq = []
             for alpha in steps:
                 q = interpolate(q0, q1, alpha)
@@ -166,6 +173,15 @@ class Duckie(object):
                 if duckie_foot_print_node in self.current_observed_nodes:
                     print("Duckies colliding yaaaay")
                     occupied_nodes.append(duckie_foot_print_node[0])
+        return occupied_nodes
+
+    def get_current_fov_occupancy_graph(self):
+        occupied_nodes = []
+        for duckie in self.current_observed_duckies:
+            #get duckie footprint and get the nodes that I can see
+            for duckie_foot_print_node in duckie.current_safe_foot_print:
+                if duckie_foot_print_node in self.current_observed_nodes:
+                    occupied_nodes.append(duckie_foot_print_node[1]['point'])
         return occupied_nodes
 
     def set_target_destination(self, destination_node):
@@ -258,7 +274,7 @@ class Duckie(object):
         # BB ll, lr, ul, ur
         bounding_box = []
         # lower_right
-        safe_dist = 0.01
+        safe_dist = 0.1
         relative_transform = geo.SE2_from_translation_angle([-self.size_x/2 - safe_dist, -self.size_y/2 - safe_dist], 0)
         transform = geo.SE2.multiply(self.current_position.as_SE2(), relative_transform)
         bounding_box.append(SE2Transform.from_SE2(transform))

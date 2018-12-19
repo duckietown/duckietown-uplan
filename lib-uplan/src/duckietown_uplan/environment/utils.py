@@ -66,7 +66,7 @@ def draw_graphs(graphs, with_labels=False, node_colors=None, edge_colors=None, s
     plt.figure(figsize=(12, 12))
     for i in range(len(graphs)):
         curr_pos = get_absolute_position_from_graph(graphs[i])
-        nx.draw(graphs[i], curr_pos, with_labels=with_labels, node_size=10, node_color=node_colors[0],
+        nx.draw(graphs[i], curr_pos, with_labels=with_labels, node_size=10, node_color=node_colors[i],
                 edge_color=edge_colors[i])
     fig_to_save = plt.gcf()
     plt.axis('off')
@@ -96,6 +96,14 @@ def create_graph_from_path(path_nodes):
     #create edges now
     for i in range(len(path_nodes) - 1):
         bb_graph.add_edge('node_'+str(i), 'node_'+str(i + 1))
+
+    return bb_graph
+
+
+def create_graph_from_nodes(nodes):
+    bb_graph = nx.MultiDiGraph()
+    for i in range(len(nodes)):
+        bb_graph.add_node('node_'+str(i), point=nodes[i])
 
     return bb_graph
 
