@@ -23,12 +23,29 @@ using `pipenv`:
     $ cd lib-uplan
     $ pip install -r requirements.txt
     $ python setup.py develop --no-deps
-    
-   
-## Unit tests
 
-Run this:
+## Pre-check
+* Ubuntu16.04 with python2.7
+* Desktop-Full installation of ROS Kinetic
+* duckietown-world
 
-    $ make -C lib-uplan tests-clean tests
+## Installation
+    $ git clone https://github.com/duckietown/duckietown-uplan.git 
+
+Create a ROS workspace add symbolic links using 
+
+    $ ln -s <path to source> <path to target>
     
-The output is generated in the folder in `lib-uplan/out-comptests/`.
+Link to uplan_visualization and duckietown_visualization packages in duckietown-uplan/ros-plan from /src folder in your ROS workspace
+
+Add symbolic links from duckietown_uplan in lib-uplan folder to your workspace
+
+Installation: cd/src/uncertainty_planning/src/duckietown-uplan/lib-uplan
+
+    $ pip install -r requirements.txt
+    $ catkin_make 
+
+and ensure all three packages build correctly and custom messages are built
+    
+    $ source devel/setup.bash
+    $ roslaunch uplan_visualization planningUncertainty.launch
