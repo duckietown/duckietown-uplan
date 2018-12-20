@@ -12,40 +12,48 @@
 
 This project aims to plan a path for a duckiebot while taking into account various sources of uncertainty.
 
+## Pre-flight checklist {#demo-planningunderuncertainty-pre-flight}
 
-## Installation from source
+duckietown-world
 
-This is the way to install within a virtual environment created by 
-using `pipenv`:
 
-    $ pipenv install
-    $ pipenv shell
-    $ cd lib-uplan
-    $ pip install -r requirements.txt
-    $ python setup.py develop --no-deps
+Those following prerequisites ensure that the simulation will run properly:
 
-## Pre-check
-* Ubuntu16.04 with python2.7
-* Desktop-Full installation of ROS Kinetic
-* duckietown-world
+Check: Desktop-Full installation of [ros-kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 
-## Installation
-    $ git clone https://github.com/duckietown/duckietown-uplan.git 
+Check: [duckietown-world](https://github.com/duckietown/duckietown-world) (And all their requirements)
 
-Create a ROS workspace add symbolic links using 
+Check: Ubuntu16.04 with python2.7
 
-    $ ln -s <path to source> <path to target>
+
+## Demo instructions {#demo-planningunderuncertainty-run}
+
+Here, give step by step instructions to reproduce the demo.
+
+Step 0: Make sure you sourced ros
+
+    $ source /opt/ros/kinetic/setup.bash       (Use setup.zsh If you are using zsh shell)
+
+Step 1: Create a catkin workspace in your home directory
+
+    $ mkdir -p ~/catkin_ws/src
+    $ cd ~/catkin_ws/src
+  
+Step 2: Clone the following repo [duckietown-uplan](https://github.com/duckietown/duckietown-uplan) 
+
+    $ git clone https://github.com/duckietown/duckietown-uplan
+
+Step 3: Installation of dependencies (NOTE: make sure that pip installation belongs to python2.7)
+
+    $ pip install -r --user duckietown-uplan/lib-uplan/requirements.txt        (Might require sudo or --user)
+    $ sudo python setup.py develop --no-deps
     
-Link to uplan_visualization and duckietown_visualization packages in duckietown-uplan/ros-plan from /src folder in your ROS workspace
+Step 4: Go back to catkin_ws main directory and run catkin_make
 
-Add symbolic links from duckietown_uplan in lib-uplan folder to your workspace
-
-Installation: cd/src/uncertainty_planning/src/duckietown-uplan/lib-uplan
-
-    $ pip install -r requirements.txt
-    $ catkin_make 
-
-and ensure all three packages build correctly and custom messages are built
+    $ cd ..
+    $ catkin_make
     
-    $ source devel/setup.bash
+Ensure all three packages build correctly and custom messages are built, now two more steps left:
+
+    $ source devel/setup.bash               (Or zsh)
     $ roslaunch uplan_visualization planningUncertainty.launch
