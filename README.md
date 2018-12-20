@@ -30,6 +30,8 @@ Check: Ubuntu16.04 with python2.7
 
 Here, give step by step instructions to reproduce the demo.
 
+** ASSUMTION: YOU ARE ABLE TO IMPORT `duckietown_world` SUCCESFULLY **
+
 Step 0: Make sure you sourced ros
 
     $ source /opt/ros/kinetic/setup.bash       (Use setup.zsh If you are using zsh shell)
@@ -46,7 +48,7 @@ Step 2: Clone the following repo [duckietown-uplan](https://github.com/duckietow
 Step 3: Installation of dependencies (NOTE: make sure that pip installation belongs to python2.7)
 
     $ cd duckietown-uplan/lib-uplan
-    $ pip install -r --user requirements.txt        (Might require sudo or --user)
+    $ pip install -r requirements.txt --user       (Might require --user)
     $ sudo python setup.py develop --no-deps
     
 Step 4: Go back to catkin_ws main directory and run catkin_make
