@@ -1,0 +1,40 @@
+<launch>
+
+    <!--node pkg="uplan_visualization" name="duckiebot_pose_publisher"
+        type="publish_poses.py" output="screen">
+        <rosparam command="load"
+            file="$(find uplan_visualization)/config/example.yaml" />
+    </node-->
+
+    <node pkg="uplan_visualization" name="duckieInfoSub"
+        type="publish_trajec.py" output="screen">
+    </node>
+
+    <node pkg="uplan_visualization" name="duckieUncertaintySub"
+        type="publish_uncertainty.py" output="screen">
+    </node>
+
+    <node pkg="uplan_visualization" name="duckieInfoPub"
+        type="publish_duckieData.py" output="screen">
+    </node>
+
+    <include
+    file="$(find duckietown_visualization)/launch/publish_map.launch">
+        <arg name="map_name" value="4way"/>
+        <arg name="rviz_config"
+            value="$(find uplan_visualization)/config/myconfig.rviz"/>
+    </include>
+
+    <include
+    file="$(find duckietown_visualization)/launch/publish_duckiebots.launch">
+        <!--arg name="duckiebot_num" value=2/-->
+        <arg name="duckiebot_list"
+            value="$(find uplan_visualization)/config/example.yaml"/>
+    </include>
+
+    <node pkg="tf"
+        type="static_transform_publisher"
+        name="map_to_duckiebot_link_broadcaster"
+        args="0 0 0 0 0 0 map duckiebot_link 10" />
+
+</launch>
