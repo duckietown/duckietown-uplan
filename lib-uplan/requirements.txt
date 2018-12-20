@@ -10,5 +10,8 @@ bumpversion
 jupyter
 nbconvert
 twine
+colour
+shapely
+opencv-python
 
 
