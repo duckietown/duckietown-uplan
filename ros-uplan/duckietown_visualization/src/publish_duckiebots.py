@@ -20,9 +20,9 @@ def get_marker(marker_id, x, y, q):
     marker.pose.position.y = y
     marker.pose.position.z = 0
 
-    marker.scale.x = 1
-    marker.scale.y = 1
-    marker.scale.z = 1
+    marker.scale.x = 0.5
+    marker.scale.y = 0.5
+    marker.scale.z = 0.5
 
     marker.pose.orientation.x = q[0]
     marker.pose.orientation.y = q[1]

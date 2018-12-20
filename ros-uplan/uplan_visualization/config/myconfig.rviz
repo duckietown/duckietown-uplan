@@ -9,7 +9,6 @@ Panels:
         - /Duckietown Map1
         - /Map Origin1
         - /Duckiebots1
-        - /Duckiebots1/Status1
         - /Duckiebot link1
       Splitter Ratio: 0.5
     Tree Height: 463
@@ -83,6 +82,22 @@ Visualization Manager:
       Radius: 0.100000001
       Reference Frame: duckiebot_link
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /trajectory_markers
+      Name: MarkerArray
+      Namespaces:
+        trajectory: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /uncertainty_markers
+      Name: Marker
+      Namespaces:
+        uncertainty: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -108,25 +123,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.6667004
+      Distance: 5.18361616
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.72544956
-        Y: 5.28217506
-        Z: 0.00534062926
+        X: 2.2456286
+        Y: 1.66383481
+        Z: 0.00172116153
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.56979632
+      Pitch: 0.604796588
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.71000004
+      Yaw: 3.63499689
     Saved: ~
 Window Geometry:
   Displays:
@@ -144,5 +159,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1325
-  X: 41
+  X: 65
   Y: 24

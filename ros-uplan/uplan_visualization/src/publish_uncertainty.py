@@ -40,8 +40,8 @@ def pub_markers(msg):
         marker.type = marker.POINTS
         marker.action = marker.ADD
 
-        marker.scale.x = 0.1
-        marker.scale.y = 0.1
+        marker.scale.x = 0.05
+        marker.scale.y = 0.05
 
         marker.pose.orientation.w = 1.0
 

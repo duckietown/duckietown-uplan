@@ -32,7 +32,7 @@ duckieVec.duckie_data = [duckieMsg]
 """
 
 current_map = dw.load_map('4way')
-number_of_duckies = 4
+number_of_duckies = 5
 duckie_town = DuckieTown(current_map)
 duckie_town.augment_graph()
 #duckie_town.render_current_graph()
@@ -42,12 +42,12 @@ duckie_town.reset()
 #     yaml.dump(a, outfile, default_flow_style=False)
 duckie_town.get_duckie(0).set_visible_path(True)
 
-for i in range(1, len(duckie_town.get_duckie_citizens())):
+for i in range(2, len(duckie_town.get_duckie_citizens())):
     duckie_town.get_duckie(i).stop_movement()
 
 def execute_simulation():
     duckie_town.create_random_targets_for_all_duckies()
-    duckie_town.step(1, display=False)
+    duckie_town.step(0.1, display=False)
     duckies_list = []
     duckieVec = duckieStruct()
     duckiePose = []
@@ -63,6 +63,7 @@ def execute_simulation():
         trac1.x = current_SE2.p[0]
         trac1.y = current_SE2.p[1]
         trac1.theta = current_SE2.theta
+        duckiePose.append((current_SE2.p[0], current_SE2.p[1], current_SE2.theta))
         path = [trac1]
         for c,ctrl_point_obj in enumerate(duckie.get_path()):
             ctrl_point = ctrl_point_obj[1]['point']
@@ -72,16 +73,19 @@ def execute_simulation():
             trac1.y = current_SE2.p[1]
             trac1.theta = current_SE2.theta
             path.append(trac1)
-            if c == 0:
-                duckiePose.append((current_SE2.p[0], current_SE2.p[1], current_SE2.theta))
-        velocity = duckie.current_velocity_profile
+
         duckieMsg1.label = str(duckie.id)
         duckieLabel.append(duckieMsg1.label)
         if duckie.has_visible_path:
-            duckieMsg1.SE2points = path
+            if len(duckie.current_velocity_profile) != 0:
+                duckieMsg1.SE2points = path
+                velocity = duckie.current_velocity_profile
+                duckieMsg1.value =  velocity
+                print("---------------------------velocity-------------------------")
+                print(velocity)
         else:
+            duckieMsg1.value =  []
             duckieMsg1.SE2points = []
-        duckieMsg1.value =  velocity
         duckies_list.append(duckieMsg1)
 
         # POPUPULATE uncertainty
@@ -106,8 +110,8 @@ def execute_simulation():
         duckieUncert1.label = str(duckie.id)
         if duckie.has_visible_path:
             duckieUncert1.SE2points = node_loc
-            print("uncert val")
-            print(uncert_val)
+            print("---------------------------uncertainty-------------------------")
+            print(duckie.observation_model.get_path_uncertainities(duckie.current_path))
         else:
             duckieUncert1.SE2points = []
         duckieUncert1.value = uncert_val
@@ -122,7 +126,7 @@ def duckieDataPub():
     pub_uncert = rospy.Publisher('duckieUncertainty_publisher', duckieStruct, queue_size=10)
     transform_broadcaster = tf.TransformBroadcaster()
     rospy.init_node('duckieInfoPub', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(50) # 10hz
     while not rospy.is_shutdown():
         #rospy.loginfo(duckieVec)
         duckieVec, duckiePose, duckieLabel, uncertVec = execute_simulation()
@@ -130,6 +134,8 @@ def duckieDataPub():
         pub_uncert.publish(uncertVec)
         t = rospy.Time.now()
         for i, k in enumerate(duckiePose):
+            if i == 1:
+                print("stationary duckie pose", k)
             transform_broadcaster.sendTransform((k[0], k[1], 0), \
             tf.transformations.quaternion_from_euler(0, 0, k[2]), \
             t, duckieLabel[i], "duckiebot_link")
