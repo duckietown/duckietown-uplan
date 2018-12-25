@@ -13,6 +13,7 @@ twine
 colour
 shapely
 PyGeometry
+duckietown-world
 opencv-python
 
 
