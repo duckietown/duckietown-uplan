@@ -12,6 +12,7 @@ nbconvert
 twine
 colour
 shapely
+PyGeometry
 opencv-python
 
 
