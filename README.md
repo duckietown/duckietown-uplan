@@ -44,7 +44,13 @@ $ docker run -it \
 
 ```
 
-Note: in order to see the rviz simulation, the host OS should have a desktop-full installation of ros with rviz.
+**Note:** In order to see the rviz simulation, the host OS should have a desktop-full installation of ros with rviz. You may need to run the following line before running the container:
+
+    $ xhost +local:root
+    
+After running the container, do not forget to run the following, as this compromises access control to X server on your host:
+
+    $ xhost -local:root
 
 ### ROS-only instructions
 
