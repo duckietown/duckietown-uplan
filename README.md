@@ -1,6 +1,6 @@
 [![CircleCI](https://circleci.com/gh/duckietown/duckietown-uplan.svg?style=shield)](https://circleci.com/gh/duckietown/duckietown-uplan)
 
-[![Coverage Status](https://coveralls.io/repos/github/aroumie1997/duckietown-uplan/badge.svg?branch=master18)](https://coveralls.io/github/duckietown/duckietown-uplan?branch=master18)
+[![Coverage Status](https://coveralls.io/repos/github/duckietown/duckietown-uplan/badge.svg?branch=master18)](https://coveralls.io/github/duckietown/duckietown-uplan?branch=master18)
 
 [![PyPI status](https://img.shields.io/pypi/status/duckietown-uplan.svg)](https://pypi.python.org/pypi/duckietown-uplan/)
 
@@ -21,12 +21,35 @@ Those following prerequisites ensure that the simulation will run properly:
 
 Check: Desktop-Full installation of [ros-kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 
-Check: [duckietown-world](https://github.com/duckietown/duckietown-world) (And all their requirements)
+Check: [duckietown-world](https://github.com/duckietown/duckietown-world) (and all its requirements)
 
 Check: Ubuntu16.04 with python2.7
 
+Check: [Docker installation](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce) for docker instructions
+
 
 ## Demo instructions {#demo-planningunderuncertainty-run}
+
+### Docker instructions
+
+First, pull the docker image:
+
+    $ docker pull aroumie1997/uplan:v1
+    
+Next, run:
+
+```
+$ docker run -it \
+   --env="DISPLAY" \
+   --env="QT_X11_NO_MITSHM=1" \
+   --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+   aroumie1997/uplan:v1
+
+```
+
+Note: in order to see the rviz simulation, the host OS should have a desktop-full installation of ros with rviz.
+
+### ROS-only instructions
 
 Here, give step by step instructions to reproduce the demo.
 
