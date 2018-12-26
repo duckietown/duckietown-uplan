@@ -50,7 +50,7 @@ Note: in order to see the rviz simulation, the host OS should have a desktop-ful
 
 Here, give step by step instructions to reproduce the demo.
 
-** ASSUMTION: YOU ARE ABLE TO IMPORT `duckietown_world` SUCCESFULLY **
+**ASSUMPTION: YOU ARE ABLE TO IMPORT `duckietown_world` SUCCESSFULLY**
 
 Step 0: Make sure you sourced ros
 
