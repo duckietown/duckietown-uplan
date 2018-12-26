@@ -14,9 +14,6 @@ This project aims to plan a path for a duckiebot while taking into account vario
 
 ## Pre-flight checklist {#demo-planningunderuncertainty-pre-flight}
 
-duckietown-world
-
-
 Those following prerequisites ensure that the simulation will run properly:
 
 Check: Desktop-Full installation of [ros-kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
