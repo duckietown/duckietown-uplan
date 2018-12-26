@@ -1,6 +1,6 @@
-[![CircleCI](https://circleci.com/gh/duckietown/duckietown-uplan.svg?style=shield)](https://circleci.com/gh/duckietown/duckietown-uplan)
+[![CircleCI](https://circleci.com/gh/aroumie1997/duckietown-uplan.svg?style=shield)](https://circleci.com/gh/aroumie1997/duckietown-uplan)
 
-[![Coverage Status](https://coveralls.io/repos/github/duckietown/duckietown-uplan/badge.svg?branch=master18)](https://coveralls.io/github/duckietown/duckietown-uplan?branch=master18)
+[![Coverage Status](https://coveralls.io/repos/github/aroumie1997/duckietown-uplan/badge.svg?branch=master18)](https://coveralls.io/github/aroumie1997/duckietown-uplan?branch=master18)
 
 [![PyPI status](https://img.shields.io/pypi/status/duckietown-uplan.svg)](https://pypi.python.org/pypi/duckietown-uplan/)
 
