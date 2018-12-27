@@ -4,7 +4,7 @@
 
 # Planning with Uncertainty
 
-This project aims to plan a path for a duckiebot while taking into account various sources of uncertainty. Upon succesfull completion of the demo, you should expect a simulation implementing both collision-free path planning and velocity profiling algorithms, as in the figure below:
+This project aims to plan a path for a duckiebot while taking into account various sources of uncertainty. Upon successful completion of the demo, you should expect a simulation implementing both collision-free path planning and velocity profiling algorithms, as in the figure below:
 
 <div figure-id="fig:expected_results" figure-caption="Expected Result when running the simulation demo">
      <img src="/resources/Picture1.png" style='width: 30em'/>
