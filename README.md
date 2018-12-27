@@ -2,6 +2,10 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/duckietown/duckietown-uplan/badge.svg?branch=master18&service=github)](https://coveralls.io/github/duckietown/duckietown-uplan?branch=master18)
 
+[![PyPI status](https://img.shields.io/pypi/status/duckietown-uplan.svg)](https://pypi.python.org/pypi/duckietown-uplan/)
+
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/duckietown-uplan.svg)](https://pypi.python.org/pypi/duckietown-uplan/)
+
 # Planning with Uncertainty
 
 This project aims to plan a path for a duckiebot while taking into account various sources of uncertainty. Upon successful completion of the demo, you should expect a simulation implementing both collision-free path planning and velocity profiling algorithms, as in the figure below:
