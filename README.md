@@ -2,12 +2,6 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/duckietown/duckietown-uplan/badge.svg?branch=master18&service=github)](https://coveralls.io/github/duckietown/duckietown-uplan?branch=master18)
 
-[![PyPI status](https://img.shields.io/pypi/status/duckietown-uplan.svg)](https://pypi.python.org/pypi/duckietown-uplan/)
-
-
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/duckietown-uplan.svg)](https://pypi.python.org/pypi/duckietown-uplan/)
-
-
 # Planning with Uncertainty
 
 This project aims to plan a path for a duckiebot while taking into account various sources of uncertainty.
@@ -44,7 +38,13 @@ $ docker run -it \
 
 ```
 
-Note: in order to see the rviz simulation, the host OS should have a desktop-full installation of ros with rviz.
+**Note:** In order to see the rviz simulation, the host OS should have a desktop-full installation of ros with rviz. You may need to run the following line before running the container:
+
+    $ xhost +local:root
+    
+After running the container, do not forget to run the following, as this compromises access control to X server on your host:
+
+    $ xhost -local:root
 
 ### ROS-only instructions
 
