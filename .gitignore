@@ -8,3 +8,6 @@ out-*
 .ipynb_checkpoints
 .compmake_history.txt
 testing-cookies/lib-*
+.idea/
+lib-uplan/notebooks/Untitled.ipynb
+lib-uplan/notebooks/simulation_vid.avi
